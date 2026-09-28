@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SoftLedger</string>
+    <string name="title_activity_main">SoftLedger</string>
+    <string name="package_name">com.softledger.app</string>
+    <string name="custom_url_scheme">com.softledger.app</string>
+</resources>
