@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Add Customer — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto lg:max-w-sm px-5 pt-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <a href="customers.html" class="text-slate-900" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <h1 class="text-lg font-bold text-slate-900">Add Customer</h1>
+    </div>
+
+    <!-- Avatar upload -->
+    <div class="flex justify-center mt-6">
+      <button id="avatar-btn" aria-label="Upload photo"
+        class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" fill="currentColor" viewBox="0 0 256 256"><path d="M168,56a8,8,0,0,1,8-8h16V32a8,8,0,0,1,16,0V48h16a8,8,0,0,1,0,16H208V80a8,8,0,0,1-16,0V64H176A8,8,0,0,1,168,56Zm62.56,54.68a103.92,103.92,0,1,1-85.24-85.24,8,8,0,0,1-2.64,15.78A88.07,88.07,0,0,0,40,128a87.62,87.62,0,0,0,22.24,58.41A79.66,79.66,0,0,1,98.3,157.66a48,48,0,1,1,59.4,0,79.66,79.66,0,0,1,36.06,28.75A87.62,87.62,0,0,0,216,128a88.85,88.85,0,0,0-1.22-14.68,8,8,0,1,1,15.78-2.64ZM128,152a32,32,0,1,0-32-32A32,32,0,0,0,128,152Zm0,64a87.57,87.57,0,0,0,53.92-18.5,64,64,0,0,0-107.84,0A87.57,87.57,0,0,0,128,216Z"></path></svg>
+      </button>
+    </div>
+
+    <form id="add-customer-form" class="mt-6 space-y-5">
+
+      <div>
+        <label for="full-name" class="block text-sm font-semibold text-slate-900 mb-1.5">Full Name <span class="text-rose-500">*</span></label>
+        <input id="full-name" type="text" required
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="Enter customer's name">
+      </div>
+
+      <div>
+        <label for="phone" class="block text-sm font-semibold text-slate-900 mb-1.5">Phone Number <span class="text-rose-500">*</span></label>
+        <input id="phone" type="tel" required
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="+234 801 234 5678">
+      </div>
+
+      <div class="flex items-start justify-between gap-4 pt-1">
+        <div>
+          <p class="text-sm font-semibold text-slate-900">Mark as Trusted</p>
+          <p class="text-xs text-slate-400 mt-0.5">This customer can charge on credit</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+          <input id="trusted-toggle" type="checkbox" checked class="sr-only peer">
+          <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+          <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+        </label>
+      </div>
+
+      <button type="submit"
+        class="sl-btn-primary w-full text-white font-semibold py-3.5 rounded-full mt-6">
+        Save Customer
+      </button>
+    </form>
+  </div>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, setLoading } from "./js/utils.js";
+  import { createCustomer } from "./js/customers.js";
+
+  await requireAuth();
+
+  document.getElementById("avatar-btn").addEventListener("click", () => showToast("Photo upload coming soon"));
+
+  document.getElementById("add-customer-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector("button[type=submit]");
+    const fullName = document.getElementById("full-name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const isTrusted = document.getElementById("trusted-toggle").checked;
+
+    if (!fullName || !phone) {
+      showToast("Name and phone are required");
+      return;
+    }
+
+    setLoading(submitBtn, true, "Saving…");
+    const { error } = await createCustomer({ fullName, phone, isTrusted });
+    setLoading(submitBtn, false);
+
+    if (error) {
+      showToast("Couldn't save customer — try again");
+      return;
+    }
+    window.location.href = "customers.html";
+  });
+</script>
+</body>
+</html>

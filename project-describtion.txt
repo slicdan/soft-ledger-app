@@ -1,0 +1,61 @@
+SoftLedger — Project Description
+
+SoftLedger is a lightweight business management and customer ledger application designed for small electronic-device charging businesses. It replaces physical notebooks used to record customer charging services, unpaid balances, and subsequent payments.
+
+Main Points
+
+Customer Management
+
+Create and manage customer profiles.
+
+Track each customer's complete transaction history.
+
+Prevent deletion of customers with existing transaction history.
+
+
+Charge & Payment Ledger
+
+Separate charges and payments records.
+
+Record every charging service and payment independently.
+
+Support partial and multiple payments.
+
+
+Automatic Customer Balance
+
+Balance is computed from the ledger: Total Charges − Total Payments = Outstanding Balance
+
+Avoids maintaining a potentially inconsistent stored balance.
+
+
+Transaction Management
+
+View individual charge/payment details.
+
+Allow editing and deletion for correcting mistakes.
+
+Preserve the underlying transaction history as the source of truth.
+
+
+Business Dashboard
+
+Provide an overview of outstanding customer balances, charges, payments, and business activity.
+
+Designed to expand into reporting and analytics as the product develops.
+
+
+Scalable Foundation
+
+Start with the core notebook-replacement problem.
+
+Gradually expand into broader business management features based on real store workflows.
+
+
+Target Market
+
+Small charging businesses and similar micro/small businesses that currently rely on physical notebooks to track customer debts and payments.
+
+
+
+Core objective: turn a simple, error-prone physical customer ledger into a reliable digital system without imposing the complexity of traditional accounting software.

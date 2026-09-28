@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Transactions — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto lg:max-w-sm px-5 pb-28">
+
+    <!-- Fixed top section: header, filter tabs, search. List scrolls underneath. -->
+    <div class="sticky top-0 z-20 bg-white pt-6 pb-3">
+
+    <!-- Header -->
+    <h1 class="text-xl font-bold text-slate-900">Transactions</h1>
+
+    <!-- Filter pills -->
+    <div class="mt-4 flex items-center gap-2">
+      <button data-filter="all"
+        class="px-4 py-1.5 rounded-full text-sm font-medium sl-btn-primary text-white">All</button>
+      <button data-filter="charge"
+        class="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Charges</button>
+      <button data-filter="payment"
+        class="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Payments</button>
+    </div>
+
+    <!-- Search -->
+    <div class="mt-4 relative">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input id="search" type="text" placeholder="Search transactions..." autocomplete="off"
+        class="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-700 placeholder-slate-400 outline-none">
+    </div>
+
+    </div>
+
+    <!-- Transaction list -->
+    <div id="transaction-list" class="mt-1 divide-y divide-slate-100"></div>
+    <p id="transaction-list-empty" class="hidden mt-8 text-sm text-slate-400 text-center">No transactions yet.</p>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+    <div class="mx-auto lg:max-w-sm grid grid-cols-4">
+      <a href="dashboard.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/>
+        </svg>
+        <span class="text-[11px] font-medium">Home</span>
+      </a>
+      <a href="customers.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="text-[11px] font-medium">Customers</span>
+      </a>
+      <button class="flex flex-col items-center gap-1 py-2.5 text-blue-600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 3 4 4-4 4"/><path d="M3 7h18"/><path d="m7 21-4-4 4-4"/><path d="M21 17H3"/>
+        </svg>
+        <span class="text-[11px] font-medium">Transactions</span>
+      </button>
+      <a href="more.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
+        </svg>
+        <span class="text-[11px] font-medium">More</span>
+      </a>
+    </div>
+  </nav>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, formatTimeAgo, formatNaira } from "./js/utils.js";
+  import { listTransactions } from "./js/transactions.js";
+
+  await requireAuth();
+
+  document.querySelectorAll("[data-toast]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      showToast(el.dataset.toast);
+    });
+  });
+
+  // Under 24h: relative ("Just now", "5m ago", "2h ago").
+  // 24h or older: "Sep 26, 15:01" — 3-letter month, day, 24-hour time, device-local.
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  function formatTxTimestamp(timestamp) {
+    const d = new Date(timestamp);
+    if (Number.isNaN(d.getTime())) return "";
+    if (Date.now() - d.getTime() < DAY_MS) return formatTimeAgo(timestamp);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${hh}:${mm}`;
+  }
+
+  const chargeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>`;
+  const paymentIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+
+  const { data: transactions, error } = await listTransactions();
+  const list = document.getElementById("transaction-list");
+  const empty = document.getElementById("transaction-list-empty");
+  const all = !error && transactions ? transactions : [];
+
+  // Tab filters map straight onto the existing tx.type values.
+  const filters = {
+    all: { match: () => true, emptyText: "No transactions yet." },
+    charge: { match: (tx) => tx.type === "charge", emptyText: "No charges yet." },
+    payment: { match: (tx) => tx.type === "payment", emptyText: "No payments yet." },
+  };
+
+  let activeFilter = "all";
+  let query = "";
+
+  // Search by customer name (case-insensitive substring) or by amount (numeric
+  // query matched against the transaction amount, e.g. "500" matches ₦1,500).
+  function matchesSearch(tx, q) {
+    if (!q) return true;
+    if ((tx.customer_name || "").toLowerCase().includes(q.toLowerCase())) return true;
+    const numeric = q.replace(/[₦,\s]/g, "").replace(/\.$/, "");
+    if (!/^\d+(\.\d+)?$/.test(numeric)) return false;
+    const amount = Number(tx.amount) || 0;
+    const amountStr = Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+    return amountStr.includes(numeric);
+  }
+
+  function renderTransactions() {
+    const f = filters[activeFilter];
+    const rows = all.filter(f.match).filter((tx) => matchesSearch(tx, query));
+    if (!rows.length) {
+      list.innerHTML = "";
+      empty.textContent = query && all.length ? `No transactions match "${query}".` : f.emptyText;
+      empty.classList.remove("hidden");
+      return;
+    }
+    empty.classList.add("hidden");
+    list.innerHTML = rows.map((tx) => {
+      const isCharge = tx.type === "charge";
+      return `
+        <a href="transaction-detail.html?type=${tx.type}&id=${tx.id}" class="w-full flex items-center gap-3 py-3.5 text-left">
+          <span class="w-10 h-10 shrink-0 rounded-full ${isCharge ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"} flex items-center justify-center">
+            ${isCharge ? chargeIcon : paymentIcon}
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-900">${isCharge ? "Charge" : "Payment"}</p>
+            <p class="text-xs text-slate-400 mt-0.5">${tx.customer_name || "Unknown"} · ${formatTxTimestamp(tx.created_at)}</p>
+          </div>
+          <p class="text-sm font-semibold ${isCharge ? "text-rose-500" : "text-emerald-600"}">${isCharge ? "−" : "+"}${formatNaira(tx.amount)}</p>
+        </a>`;
+    }).join("");
+  }
+
+  const pills = document.querySelectorAll("[data-filter]");
+  function setActivePill(activeKey) {
+    pills.forEach((pill) => {
+      const active = pill.dataset.filter === activeKey;
+      pill.classList.toggle("sl-btn-primary", active);
+      pill.classList.toggle("text-white", active);
+      pill.classList.toggle("border", !active);
+      pill.classList.toggle("border-slate-200", !active);
+      pill.classList.toggle("text-slate-600", !active);
+      pill.setAttribute("aria-pressed", active);
+    });
+  }
+
+  pills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      activeFilter = pill.dataset.filter;
+      setActivePill(activeFilter);
+      renderTransactions();
+    });
+  });
+
+  document.getElementById("search").addEventListener("input", (e) => {
+    query = e.target.value.trim();
+    renderTransactions();
+  });
+
+  setActivePill(activeFilter);
+  renderTransactions();
+</script>
+</body>
+</html>

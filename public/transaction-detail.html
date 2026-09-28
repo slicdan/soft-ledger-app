@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Transaction — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto sm:max-w-sm px-5 pt-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <button id="back-btn" class="text-slate-900" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h1 id="page-title" class="text-lg font-bold text-slate-900">Transaction</h1>
+    </div>
+
+    <p id="load-error" class="hidden mt-6 text-sm text-rose-500 text-center">Couldn't load this transaction.</p>
+
+    <div id="content" class="hidden">
+
+      <!-- Summary -->
+      <div class="mt-6 rounded-2xl p-5" style="background:#0B1220">
+        <p id="type-label" class="text-slate-400 text-xs"></p>
+        <p id="amount-display" class="text-white text-2xl font-bold mt-1"></p>
+        <a id="customer-link" href="#" class="inline-block mt-3 text-sm text-blue-300 font-medium"></a>
+        <p id="created-at-display" class="text-slate-500 text-xs mt-1"></p>
+      </div>
+
+      <!-- View mode -->
+      <div id="view-mode" class="mt-6 space-y-4">
+        <div id="view-device-row" class="hidden flex items-center justify-between py-2 border-b border-slate-100">
+          <span class="text-sm text-slate-500">Device</span>
+          <span id="view-device" class="text-sm font-medium text-slate-900"></span>
+        </div>
+        <div id="view-duration-row" class="hidden flex items-center justify-between py-2 border-b border-slate-100">
+          <span class="text-sm text-slate-500">Duration</span>
+          <span id="view-duration" class="text-sm font-medium text-slate-900"></span>
+        </div>
+        <div id="view-method-row" class="hidden flex items-center justify-between py-2 border-b border-slate-100">
+          <span class="text-sm text-slate-500">Method</span>
+          <span id="view-method" class="text-sm font-medium text-slate-900"></span>
+        </div>
+        <div>
+          <p class="text-sm text-slate-500">Notes</p>
+          <p id="view-notes" class="text-sm text-slate-900 mt-1">—</p>
+        </div>
+
+        <button id="edit-btn" class="sl-btn-primary w-full text-white font-semibold py-3.5 rounded-full mt-2">
+          Edit
+        </button>
+        <button id="delete-btn" class="w-full border border-rose-200 text-rose-500 font-semibold py-3.5 rounded-full">
+          Delete
+        </button>
+      </div>
+
+      <!-- Edit mode -->
+      <form id="edit-form" class="hidden mt-6 space-y-6">
+
+        <!-- Device / Item (charge only) -->
+        <div id="edit-device-field" class="hidden">
+          <p class="text-sm font-semibold text-slate-900 mb-2">Device / Item</p>
+          <div class="grid grid-cols-4 gap-2" id="device-group">
+            <button type="button" data-value="Phone" class="device-btn flex flex-col items-center gap-1.5 py-3 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              <span class="text-xs font-medium">Phone</span>
+            </button>
+            <button type="button" data-value="Power Bank" class="device-btn flex flex-col items-center gap-1.5 py-3 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="7" width="12" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><line x1="12" y1="11" x2="12" y2="15"/></svg>
+              <span class="text-xs font-medium">Power Bank</span>
+            </button>
+            <button type="button" data-value="Laptop" class="device-btn flex flex-col items-center gap-1.5 py-3 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+              <span class="text-xs font-medium">Laptop</span>
+            </button>
+            <button type="button" data-value="Other" class="device-btn flex flex-col items-center gap-1.5 py-3 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>
+              <span class="text-xs font-medium">Other</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Charging Duration (charge only) -->
+        <div id="edit-duration-field" class="hidden">
+          <p class="text-sm font-semibold text-slate-900 mb-2">Charging Duration</p>
+          <div class="grid grid-cols-4 gap-2" id="duration-group">
+            <button type="button" data-value="1h" class="duration-btn py-2.5 rounded-full border border-slate-200 text-slate-600 text-sm font-medium">1h</button>
+            <button type="button" data-value="2h" class="duration-btn py-2.5 rounded-full border border-slate-200 text-slate-600 text-sm font-medium">2h</button>
+            <button type="button" data-value="3h" class="duration-btn py-2.5 rounded-full border border-slate-200 text-slate-600 text-sm font-medium">3h</button>
+            <button type="button" data-value="Custom" class="duration-btn py-2.5 rounded-full border border-slate-200 text-slate-600 text-sm font-medium">Custom</button>
+          </div>
+        </div>
+
+        <!-- Payment Method (payment only) -->
+        <div id="edit-method-field" class="hidden">
+          <p class="text-sm font-semibold text-slate-900 mb-2">Payment Method</p>
+          <div class="grid grid-cols-3 gap-2" id="method-group">
+            <button type="button" data-value="Cash" class="method-btn flex flex-col items-center gap-1.5 py-3.5 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v2h18V7Z"/><path d="M5 11v7"/><path d="M9 11v7"/><path d="M15 11v7"/><path d="M19 11v7"/><path d="M3 21h18"/></svg>
+              <span class="text-xs font-medium">Cash</span>
+            </button>
+            <button type="button" data-value="Transfer" class="method-btn flex flex-col items-center gap-1.5 py-3.5 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 3 4 4-4 4"/><path d="M3 7h18"/><path d="m7 21-4-4 4-4"/><path d="M21 17H3"/></svg>
+              <span class="text-xs font-medium">Transfer</span>
+            </button>
+            <button type="button" data-value="Other" class="method-btn flex flex-col items-center gap-1.5 py-3.5 rounded-xl border border-slate-200 text-slate-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>
+              <span class="text-xs font-medium">Other</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label for="edit-amount" class="block text-sm font-semibold text-slate-900 mb-1.5">Amount (₦)</label>
+          <input id="edit-amount" type="number" inputmode="numeric" min="0" step="50" required
+                 class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition">
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label for="edit-notes" class="block text-sm font-semibold text-slate-900 mb-1.5">Notes (optional)</label>
+          <textarea id="edit-notes" rows="2"
+                 class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition resize-none"></textarea>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="button" id="cancel-edit-btn" class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3.5 rounded-full">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 sl-btn-primary text-white font-semibold py-3.5 rounded-full">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, setLoading, formatNaira } from "./js/utils.js";
+  import { getCustomerBasicById } from "./js/customers.js";
+  import { getCharge, updateCharge, deleteCharge } from "./js/charges.js";
+  import { getPayment, updatePayment, deletePayment } from "./js/payments.js";
+
+  await requireAuth();
+
+  document.getElementById("back-btn").addEventListener("click", () => {
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = "transactions.html";
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get("type");
+  const id = params.get("id");
+  const isCharge = type === "charge";
+
+  if (!id || (type !== "charge" && type !== "payment")) {
+    document.getElementById("load-error").classList.remove("hidden");
+    throw new Error("missing or invalid type/id");
+  }
+
+  const { data: record, error } = isCharge ? await getCharge(id) : await getPayment(id);
+  if (error || !record) {
+    document.getElementById("load-error").classList.remove("hidden");
+    throw new Error("transaction not found");
+  }
+
+  const { data: customer } = await getCustomerBasicById(record.customer_id);
+
+  document.getElementById("page-title").textContent = isCharge ? "Charge" : "Payment";
+  document.getElementById("type-label").textContent = isCharge ? "Charge" : "Payment received";
+  document.getElementById("amount-display").textContent = formatNaira(record.amount);
+  const customerLink = document.getElementById("customer-link");
+  customerLink.textContent = customer?.full_name || "Unknown customer";
+  customerLink.href = customer ? `customer-detail.html?id=${customer.id}` : "#";
+  document.getElementById("created-at-display").textContent = new Date(record.created_at).toLocaleString("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  if (isCharge) {
+    document.getElementById("view-device-row").classList.remove("hidden");
+    document.getElementById("view-duration-row").classList.remove("hidden");
+    document.getElementById("view-device").textContent = record.device;
+    document.getElementById("view-duration").textContent = record.duration;
+    document.getElementById("edit-device-field").classList.remove("hidden");
+    document.getElementById("edit-duration-field").classList.remove("hidden");
+  } else {
+    document.getElementById("view-method-row").classList.remove("hidden");
+    document.getElementById("view-method").textContent = record.method;
+    document.getElementById("edit-method-field").classList.remove("hidden");
+  }
+  document.getElementById("view-notes").textContent = record.notes || "—";
+
+  document.getElementById("content").classList.remove("hidden");
+
+  // ── Edit mode ──────────────────────────────────────────────────────
+  const viewMode = document.getElementById("view-mode");
+  const editForm = document.getElementById("edit-form");
+
+  function selectButton(groupSelector, value, activeClasses, idleClasses) {
+    document.querySelectorAll(groupSelector).forEach((b) => {
+      const isActive = b.dataset.value === value;
+      b.setAttribute("aria-pressed", String(isActive));
+      b.classList.remove(...activeClasses, ...idleClasses);
+      b.classList.add(...(isActive ? activeClasses : idleClasses));
+    });
+  }
+
+  let selectedDevice = record.device;
+  let selectedDuration = record.duration;
+  let selectedMethod = record.method;
+
+  if (isCharge) {
+    selectButton(".device-btn", selectedDevice,
+      ["border-2", "border-blue-600", "bg-blue-50", "text-blue-600"],
+      ["border", "border-slate-200", "text-slate-500"]);
+    selectButton(".duration-btn", selectedDuration,
+      ["sl-btn-primary", "text-white"],
+      ["border", "border-slate-200", "text-slate-600"]);
+  } else {
+    selectButton(".method-btn", selectedMethod,
+      ["border-2", "border-blue-600", "bg-blue-50", "text-blue-600"],
+      ["border", "border-slate-200", "text-slate-500"]);
+  }
+
+  document.querySelectorAll(".device-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedDevice = btn.dataset.value;
+      selectButton(".device-btn", selectedDevice,
+        ["border-2", "border-blue-600", "bg-blue-50", "text-blue-600"],
+        ["border", "border-slate-200", "text-slate-500"]);
+    });
+  });
+  document.querySelectorAll(".duration-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.value === "Custom") {
+        showToast("Custom duration coming soon");
+        return;
+      }
+      selectedDuration = btn.dataset.value;
+      selectButton(".duration-btn", selectedDuration,
+        ["sl-btn-primary", "text-white"],
+        ["border", "border-slate-200", "text-slate-600"]);
+    });
+  });
+  document.querySelectorAll(".method-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedMethod = btn.dataset.value;
+      selectButton(".method-btn", selectedMethod,
+        ["border-2", "border-blue-600", "bg-blue-50", "text-blue-600"],
+        ["border", "border-slate-200", "text-slate-500"]);
+    });
+  });
+
+  document.getElementById("edit-btn").addEventListener("click", () => {
+    document.getElementById("edit-amount").value = record.amount;
+    document.getElementById("edit-notes").value = record.notes || "";
+    viewMode.classList.add("hidden");
+    editForm.classList.remove("hidden");
+  });
+  document.getElementById("cancel-edit-btn").addEventListener("click", () => {
+    editForm.classList.add("hidden");
+    viewMode.classList.remove("hidden");
+  });
+
+  editForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector("button[type=submit]");
+    const amount = Number(document.getElementById("edit-amount").value);
+    const notes = document.getElementById("edit-notes").value.trim();
+
+    const fields = isCharge
+      ? { device: selectedDevice, duration: selectedDuration, amount, notes: notes || null }
+      : { amount, method: selectedMethod, notes: notes || null };
+
+    setLoading(submitBtn, true, "Saving…");
+    const { error } = isCharge ? await updateCharge(id, fields) : await updatePayment(id, fields);
+    setLoading(submitBtn, false);
+
+    if (error) {
+      showToast("Couldn't save changes — try again");
+      return;
+    }
+    window.location.reload();
+  });
+
+  document.getElementById("delete-btn").addEventListener("click", async () => {
+    const confirmed = window.confirm(`Delete this ${isCharge ? "charge" : "payment"}? This can't be undone.`);
+    if (!confirmed) return;
+
+    const { error } = isCharge ? await deleteCharge(id) : await deletePayment(id);
+    if (error) {
+      showToast("Couldn't delete — try again");
+      return;
+    }
+    window.location.href = "transactions.html";
+  });
+</script>
+</body>
+</html>

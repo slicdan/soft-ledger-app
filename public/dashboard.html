@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Home — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="h-screen bg-white">
+
+  <div class="mx-auto lg:max-w-sm px-5 pt-6 pb-28 h-screen overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div>
+        <p id="greeting" class="text-slate-400 text-sm">Good morning,</p>
+        <h1 id="user-name" class="text-xl font-bold text-slate-900 mt-0.5"></h1>
+      </div>
+      <button id="notif-btn" class="text-slate-700 mt-1" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Revenue card -->
+    <div class="mt-6 rounded-2xl p-5" style="background:#0B1220">
+      <div class="flex items-end justify-between">
+        <div>
+          <p class="text-slate-400 text-xs">Total Revenue (Today)</p>
+          <div class="flex flex-wrap items-baseline gap-x-2 mt-2">
+            <span id="revenue-today" class="text-white text-2xl font-bold">₦0</span>
+            <span id="revenue-delta" class="flex items-center gap-0.5 text-xs font-semibold"></span>
+          </div>
+        </div>
+        <canvas id="revenue-trend-chart" width="40" height="28" class="shrink-0 mb-2"
+          role="img" aria-label="Revenue trend (no data yet)"></canvas>
+      </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="mt-6 grid grid-cols-3 border-t border-l border-slate-100 rounded-xl overflow-hidden">
+      <div class="p-4 border-r border-b border-slate-100">
+        <p class="text-slate-400 text-xs">Customers</p>
+        <p id="stat-customers" class="text-slate-900 font-bold text-lg mt-1">0</p>
+      </div>
+      <div class="p-4 border-r border-b border-slate-100">
+        <p class="text-slate-400 text-xs">Outstanding</p>
+        <p id="stat-outstanding" class="text-slate-900 font-bold text-lg mt-1">0</p>
+      </div>
+      <div class="p-4 border-r border-b border-slate-100">
+        <p class="text-slate-400 text-xs">Total Today</p>
+        <p id="stat-total-today" class="text-slate-900 font-bold text-lg mt-1">₦0</p>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+      <a href="add-customer.html" class="flex flex-col items-center gap-2">
+        <span class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/>
+          </svg>
+        </span>
+        <span class="text-xs font-medium text-slate-600">Add Customer</span>
+      </a>
+      <a href="record-charge.html" class="flex flex-col items-center gap-2">
+        <span class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/>
+          </svg>
+        </span>
+        <span class="text-xs font-medium text-slate-600">Add Charge</span>
+      </a>
+      <a href="record-payment.html" class="flex flex-col items-center gap-2">
+        <span class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+            <circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <span class="text-xs font-medium text-slate-600">Record Payment</span>
+      </a>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="mt-8 flex items-center justify-between">
+      <h2 class="font-semibold text-slate-900">Recent Activity</h2>
+      <a href="transactions.html" class="sl-link text-sm font-medium">View all</a>
+    </div>
+
+    <div id="recent-activity-list" class="mt-2 divide-y divide-slate-100"></div>
+    <p id="recent-activity-empty" class="hidden mt-4 text-sm text-slate-400 text-center">No activity yet.</p>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+    <div class="mx-auto lg:max-w-sm grid grid-cols-4">
+      <button class="flex flex-col items-center gap-1 py-2.5 text-blue-600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/>
+        </svg>
+        <span class="text-[11px] font-medium">Home</span>
+      </button>
+      <a href="customers.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="text-[11px] font-medium">Customers</span>
+      </a>
+      <a href="transactions.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 3 4 4-4 4"/><path d="M3 7h18"/><path d="m7 21-4-4 4-4"/><path d="M21 17H3"/>
+        </svg>
+        <span class="text-[11px] font-medium">Transactions</span>
+      </a>
+      <a href="more.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
+        </svg>
+        <span class="text-[11px] font-medium">More</span>
+      </a>
+    </div>
+  </nav>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { supabase } from "./js/supabase-client.js";
+  import { showToast, formatTimeAgo, formatNaira, countUpNaira } from "./js/utils.js";
+  import { listCustomersWithBalances } from "./js/customers.js";
+  import { getTodayChargesTotal, listChargesInRange } from "./js/charges.js?v=2";
+  import { listRecentTransactions } from "./js/transactions.js";
+
+  const session = await requireAuth();
+  if (!session) throw new Error("redirecting to login");
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning," : hour < 17 ? "Good afternoon," : "Good evening,";
+  document.getElementById("greeting").textContent = greeting;
+
+  // requireAuth()'s session comes from getSession() — a local, cached read
+  // used only to gate the page. It isn't guaranteed to carry current
+  // user_metadata. getUser() round-trips to the Auth server and returns the
+  // authoritative record, so display data reads from there instead.
+  const { data: { user } } = await supabase.auth.getUser();
+  const fullName = user?.user_metadata?.full_name;
+  document.getElementById("user-name").textContent = fullName ? fullName.split(" ")[0] : "";
+
+  document.getElementById("notif-btn").addEventListener("click", () => showToast("Notifications coming soon"));
+  document.querySelectorAll("[data-toast]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      showToast(el.dataset.toast);
+    });
+  });
+
+  // Revenue card: charges billed per local day (same definition as today's
+  // total) for the last TREND_DAYS days, oldest first. Yesterday's total and
+  // the trend bars both come from this one range read.
+  const TREND_DAYS = 4;
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const todayStart = addDays(new Date(), 0);
+  const trendStart = addDays(todayStart, -(TREND_DAYS - 1));
+
+  const RECENT_ACTIVITY_LIMIT = 4;
+  const [
+    { data: customers, error: customersError },
+    { total: todayTotal },
+    { data: recent, error: recentError },
+    { data: trendRows, error: trendError },
+  ] = await Promise.all([
+    listCustomersWithBalances(),
+    getTodayChargesTotal(),
+    listRecentTransactions(RECENT_ACTIVITY_LIMIT),
+    listChargesInRange(trendStart, addDays(todayStart, 1)),
+  ]);
+
+  if (!customersError && customers) {
+    document.getElementById("stat-customers").textContent = customers.length;
+    document.getElementById("stat-outstanding").textContent = formatNaira(
+      customers.filter((c) => c.balance > 0).reduce((sum, c) => sum + c.balance, 0)
+    );
+  }
+  document.getElementById("stat-total-today").textContent = formatNaira(todayTotal);
+  countUpNaira(document.getElementById("revenue-today"), todayTotal);
+
+  const activityList = document.getElementById("recent-activity-list");
+  const activityEmpty = document.getElementById("recent-activity-empty");
+  if (!recentError && recent && recent.length) {
+    activityList.innerHTML = recent.slice(0, RECENT_ACTIVITY_LIMIT).map((tx) => {
+      const initial = (tx.customer_name || "?").charAt(0).toUpperCase();
+      const label = tx.type === "charge" ? "Charged" : "Payment received";
+      return `
+        <a href="transaction-detail.html?type=${tx.type}&id=${tx.id}" class="flex items-center gap-3 py-3">
+          <span class="w-10 h-10 shrink-0 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-semibold">${initial}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-900">${tx.customer_name || "Unknown"}</p>
+            <p class="text-xs text-slate-400">${label} · ${formatTimeAgo(tx.created_at)}</p>
+          </div>
+          <p class="text-sm font-semibold text-slate-900">${formatNaira(tx.amount)}</p>
+        </a>`;
+    }).join("");
+  } else {
+    activityEmpty.classList.remove("hidden");
+  }
+
+  // Revenue trend chart — the card's mini bar chart, one bar per day, today last.
+  const revenueTrendChart = new Chart(document.getElementById("revenue-trend-chart"), {
+    type: "bar",
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        backgroundColor: ["#3B82F6", "#3B82F6", "#3B82F6", "#60A5FA"],
+        borderRadius: 2,
+        barThickness: 5,
+      }],
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      animation: false,
+      events: [],
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+      },
+      scales: {
+        x: { display: false },
+        y: { display: false, beginAtZero: true },
+      },
+    },
+  });
+
+  if (!trendError && trendRows) {
+    const daily = new Array(TREND_DAYS).fill(0);
+    const dayIndex = new Map(daily.map((_, i) => [dayKey(addDays(trendStart, i)), i]));
+    for (const row of trendRows) {
+      const i = dayIndex.get(dayKey(new Date(row.created_at)));
+      if (i !== undefined) daily[i] += Number(row.amount) || 0;
+    }
+
+    // Chart: oldest → today.
+    const labels = daily.map((_, i) => addDays(trendStart, i).toLocaleDateString("en-NG", { weekday: "short" }));
+    revenueTrendChart.data.labels = labels;
+    revenueTrendChart.data.datasets[0].data = daily;
+    revenueTrendChart.update();
+    revenueTrendChart.canvas.setAttribute(
+      "aria-label",
+      `Revenue, last ${TREND_DAYS} days: ${labels.map((l, i) => `${l} ${formatNaira(daily[i])}`).join(", ")}`
+    );
+
+    // % change vs yesterday. Both zero → 0%. No baseline (yesterday 0, today
+    // > 0) → "—", never Infinity/NaN.
+    const CHEVRON_UP = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+    const CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    const deltaEl = document.getElementById("revenue-delta");
+    const yesterdayTotal = daily[TREND_DAYS - 2];
+    deltaEl.title = "vs yesterday";
+    if (yesterdayTotal > 0) {
+      const pct = Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100);
+      if (pct > 0) {
+        deltaEl.classList.add("text-emerald-400");
+        deltaEl.innerHTML = `${CHEVRON_UP}${pct}%`;
+      } else if (pct < 0) {
+        deltaEl.classList.add("text-rose-400");
+        deltaEl.innerHTML = `${CHEVRON_DOWN}${Math.abs(pct)}%`;
+      } else {
+        deltaEl.classList.add("text-slate-400");
+        deltaEl.textContent = "0%";
+      }
+    } else {
+      deltaEl.classList.add("text-slate-400");
+      deltaEl.textContent = todayTotal > 0 ? "—" : "0%";
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Customer — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto sm:max-w-sm px-5 pt-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <a href="customers.html" class="text-slate-900" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <h1 class="text-lg font-bold text-slate-900">Customer</h1>
+    </div>
+
+    <p id="load-error" class="hidden mt-6 text-sm text-rose-500 text-center">Couldn't load this customer.</p>
+
+    <div id="content" class="hidden">
+
+      <!-- View mode -->
+      <div id="view-mode">
+        <div class="flex flex-col items-center text-center mt-6">
+          <span id="avatar-initial" class="w-16 h-16 rounded-full bg-blue-900 text-white flex items-center justify-center text-xl font-semibold"></span>
+          <h2 id="view-name" class="mt-3 text-lg font-bold text-slate-900"></h2>
+          <p id="view-phone" class="text-sm text-slate-400 mt-0.5"></p>
+          <span id="trusted-badge" class="hidden inline-block mt-2 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Trusted</span>
+        </div>
+
+        <div class="mt-6 rounded-2xl p-5 text-center" style="background:#0B1220">
+          <p class="text-slate-400 text-xs">Balance</p>
+          <p id="balance-display" class="text-white text-2xl font-bold mt-1"></p>
+        </div>
+
+        <div class="mt-8 flex items-center justify-between">
+          <h3 class="font-semibold text-slate-900">Transaction History</h3>
+        </div>
+        <div id="history-list" class="mt-2 divide-y divide-slate-100"></div>
+        <p id="history-empty" class="hidden mt-4 text-sm text-slate-400 text-center">No transactions yet.</p>
+
+        <button id="edit-btn" class="sl-btn-primary w-full text-white font-semibold py-3.5 rounded-full mt-8">
+          Edit Customer
+        </button>
+        <button id="delete-btn" class="w-full border border-rose-200 text-rose-500 font-semibold py-3.5 rounded-full mt-3">
+          Delete Customer
+        </button>
+      </div>
+
+      <!-- Edit mode -->
+      <form id="edit-form" class="hidden mt-6 space-y-5">
+        <div>
+          <label for="edit-full-name" class="block text-sm font-semibold text-slate-900 mb-1.5">Full Name</label>
+          <input id="edit-full-name" type="text" required
+                 class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition">
+        </div>
+        <div>
+          <label for="edit-phone" class="block text-sm font-semibold text-slate-900 mb-1.5">Phone Number</label>
+          <input id="edit-phone" type="tel" required
+                 class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition">
+        </div>
+        <div class="flex items-start justify-between gap-4 pt-1">
+          <div>
+            <p class="text-sm font-semibold text-slate-900">Mark as Trusted</p>
+            <p class="text-xs text-slate-400 mt-0.5">This customer can charge on credit</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+            <input id="edit-trusted-toggle" type="checkbox" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+            <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+          </label>
+        </div>
+        <div class="flex gap-3 pt-1">
+          <button type="button" id="cancel-edit-btn" class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3.5 rounded-full">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 sl-btn-primary text-white font-semibold py-3.5 rounded-full">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, setLoading, formatTimeAgo, formatNaira } from "./js/utils.js";
+  import { getCustomerBalance, updateCustomer, deleteCustomer } from "./js/customers.js";
+  import { listTransactionsForCustomer } from "./js/transactions.js";
+
+  await requireAuth();
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  if (!id) {
+    document.getElementById("load-error").classList.remove("hidden");
+    throw new Error("missing id");
+  }
+
+  const [{ data: customer, error: customerError }, { data: history, error: historyError }] = await Promise.all([
+    getCustomerBalance(id),
+    listTransactionsForCustomer(id),
+  ]);
+
+  if (customerError || !customer) {
+    document.getElementById("load-error").classList.remove("hidden");
+    throw new Error("customer not found");
+  }
+
+  function renderView() {
+    document.getElementById("avatar-initial").textContent = customer.full_name.charAt(0).toUpperCase();
+    document.getElementById("view-name").textContent = customer.full_name;
+    document.getElementById("view-phone").textContent = customer.phone;
+    document.getElementById("trusted-badge").classList.toggle("hidden", !customer.is_trusted);
+    document.getElementById("balance-display").textContent = formatNaira(Math.max(customer.balance, 0));
+  }
+  renderView();
+
+  const historyList = document.getElementById("history-list");
+  const historyEmpty = document.getElementById("history-empty");
+  const transactions = historyError ? [] : (history || []);
+
+  if (!transactions.length) {
+    historyEmpty.classList.remove("hidden");
+  } else {
+    historyList.innerHTML = transactions.map((tx) => {
+      const isCharge = tx.type === "charge";
+      return `
+        <a href="transaction-detail.html?type=${tx.type}&id=${tx.id}" class="flex items-center gap-3 py-3">
+          <span class="w-10 h-10 shrink-0 rounded-full ${isCharge ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"} flex items-center justify-center text-xs font-semibold">
+            ${isCharge ? "C" : "P"}
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-900">${isCharge ? "Charge" : "Payment received"}</p>
+            <p class="text-xs text-slate-400">${formatTimeAgo(tx.created_at)}</p>
+          </div>
+          <p class="text-sm font-semibold ${isCharge ? "text-rose-500" : "text-emerald-600"}">${isCharge ? "−" : "+"}${formatNaira(tx.amount)}</p>
+        </a>`;
+    }).join("");
+  }
+
+  document.getElementById("content").classList.remove("hidden");
+
+  // ── Edit mode ──────────────────────────────────────────────────────
+  const viewMode = document.getElementById("view-mode");
+  const editForm = document.getElementById("edit-form");
+
+  document.getElementById("edit-btn").addEventListener("click", () => {
+    document.getElementById("edit-full-name").value = customer.full_name;
+    document.getElementById("edit-phone").value = customer.phone;
+    document.getElementById("edit-trusted-toggle").checked = customer.is_trusted;
+    viewMode.classList.add("hidden");
+    editForm.classList.remove("hidden");
+  });
+  document.getElementById("cancel-edit-btn").addEventListener("click", () => {
+    editForm.classList.add("hidden");
+    viewMode.classList.remove("hidden");
+  });
+
+  editForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector("button[type=submit]");
+    const fullName = document.getElementById("edit-full-name").value.trim();
+    const phone = document.getElementById("edit-phone").value.trim();
+    const isTrusted = document.getElementById("edit-trusted-toggle").checked;
+
+    if (!fullName || !phone) {
+      showToast("Name and phone are required");
+      return;
+    }
+
+    setLoading(submitBtn, true, "Saving…");
+    const { error } = await updateCustomer(id, { full_name: fullName, phone, is_trusted: isTrusted });
+    setLoading(submitBtn, false);
+
+    if (error) {
+      showToast("Couldn't save changes — try again");
+      return;
+    }
+    window.location.reload();
+  });
+
+  document.getElementById("delete-btn").addEventListener("click", async () => {
+    if (transactions.length) {
+      showToast(`Can't delete — this customer has ${transactions.length} transaction${transactions.length === 1 ? "" : "s"}`);
+      return;
+    }
+    const confirmed = window.confirm(`Delete ${customer.full_name}? This can't be undone.`);
+    if (!confirmed) return;
+
+    const { error } = await deleteCustomer(id);
+    if (error) {
+      showToast("Couldn't delete — this customer may have transaction history");
+      return;
+    }
+    window.location.href = "customers.html";
+  });
+</script>
+</body>
+</html>

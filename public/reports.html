@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Reports — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto lg:max-w-sm px-5 pt-6 pb-28">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <a href="more.html" class="text-slate-900" aria-label="Back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <h1 class="text-lg font-bold text-slate-900">Reports</h1>
+      </div>
+      <div class="relative shrink-0">
+        <button id="range-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
+          class="flex items-center gap-1.5 border border-slate-200 rounded-full pl-3 pr-2.5 py-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span id="range-label" class="text-xs font-medium text-slate-700">Last 7 days</span>
+          <svg id="range-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 transition-transform">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+        <div id="range-menu" role="listbox" aria-label="Date range"
+          class="hidden absolute right-0 top-full mt-2 w-44 bg-white border border-slate-100 rounded-xl shadow-lg py-1 z-30">
+          <button type="button" role="option" data-range="7" class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left"><span>Last 7 days</span></button>
+          <button type="button" role="option" data-range="30" class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left"><span>Last 30 days</span></button>
+          <button type="button" role="option" data-range="month" class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left"><span>This month</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="report-content" class="transition-opacity duration-150" aria-busy="false">
+
+    <!-- Overview -->
+    <h2 class="mt-6 text-sm font-bold text-slate-900">Overview</h2>
+    <div class="mt-3 grid grid-cols-2 gap-3">
+      <div class="rounded-xl border border-slate-100 p-4">
+        <p class="text-xs text-slate-400">Total Revenue</p>
+        <p id="total-revenue" class="text-lg font-bold text-slate-900 mt-1.5">—</p>
+        <span id="revenue-delta" class="flex items-center gap-0.5 text-xs font-semibold mt-1 min-h-[1rem]"></span>
+      </div>
+      <div class="rounded-xl border border-slate-100 p-4">
+        <p class="text-xs text-slate-400">Total Charges</p>
+        <p id="total-charges" class="text-lg font-bold text-slate-900 mt-1.5">—</p>
+        <span id="charges-delta" class="flex items-center gap-0.5 text-xs font-semibold mt-1 min-h-[1rem]"></span>
+      </div>
+    </div>
+
+    <!-- Revenue Trend -->
+    <div class="mt-6 rounded-2xl border border-slate-100 p-4">
+      <h2 class="text-sm font-bold text-slate-900">Revenue Trend</h2>
+      <div class="mt-3 relative" style="height:160px">
+        <canvas id="revenue-trend-chart" role="img" aria-label="Revenue trend"></canvas>
+        <p id="trend-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 pointer-events-none">No payments in this period</p>
+      </div>
+    </div>
+
+    <!-- Top Customers -->
+    <div class="mt-6 flex items-center justify-between">
+      <h2 class="text-sm font-bold text-slate-900">Top Customers</h2>
+      <button id="top-toggle" type="button" class="hidden sl-link text-sm font-medium">View all</button>
+    </div>
+    <div id="top-customers" class="mt-2"></div>
+    <p id="top-empty" class="hidden mt-3 text-sm text-slate-400 text-center">No payments in this period.</p>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+    <div class="mx-auto lg:max-w-sm grid grid-cols-4">
+      <a href="dashboard.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/>
+        </svg>
+        <span class="text-[11px] font-medium">Home</span>
+      </a>
+      <a href="customers.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="text-[11px] font-medium">Customers</span>
+      </a>
+      <a href="transactions.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 3 4 4-4 4"/><path d="M3 7h18"/><path d="m7 21-4-4 4-4"/><path d="M21 17H3"/>
+        </svg>
+        <span class="text-[11px] font-medium">Transactions</span>
+      </a>
+      <a href="more.html" class="flex flex-col items-center gap-1 py-2.5 text-blue-600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
+        </svg>
+        <span class="text-[11px] font-medium">More</span>
+      </a>
+    </div>
+  </nav>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, formatNaira } from "./js/utils.js";
+  import { listChargesInRange } from "./js/charges.js?v=2";
+  import { listPaymentsInRange } from "./js/payments.js?v=2";
+  import { listCustomersBasic } from "./js/customers.js";
+
+  await requireAuth();
+
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const TOP_PREVIEW = 5;
+  const AVATAR_COLORS = ["#1E3A8A", "#818CF8", "#94A3B8", "#22D3EE", "#34D399", "#FBBF24"];
+
+  // ---- date helpers (local time, DST-safe) ----
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
+  const RANGES = {
+    "7": { label: "Last 7 days", days: 7 },
+    "30": { label: "Last 30 days", days: 30 },
+    month: { label: "This month" },
+  };
+
+  // Current period = [start, end); previous period = the same number of days
+  // immediately before it, used for the % change comparisons.
+  function getPeriods(key) {
+    const today = startOfDay(new Date());
+    const end = addDays(today, 1);
+    const start = key === "month"
+      ? new Date(today.getFullYear(), today.getMonth(), 1)
+      : addDays(today, -(RANGES[key].days - 1));
+    const days = Math.round((end - start) / DAY_MS);
+    return { start, end, days, prevStart: addDays(start, -days) };
+  }
+
+  // ---- formatting helpers ----
+  function formatCompactNaira(v) {
+    if (v >= 1e6) return `₦${+(v / 1e6).toFixed(1)}M`;
+    if (v >= 1e3) return `₦${+(v / 1e3).toFixed(1)}k`;
+    return `₦${+v.toFixed(0)}`;
+  }
+  const escapeHtml = (str) =>
+    String(str).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+  // ---- date range dropdown ----
+  const rangeBtn = document.getElementById("range-btn");
+  const rangeMenu = document.getElementById("range-menu");
+  const rangeChevron = document.getElementById("range-chevron");
+  const rangeOptions = rangeMenu.querySelectorAll("[data-range]");
+  let activeRange = "7";
+
+  function setMenuOpen(open) {
+    rangeMenu.classList.toggle("hidden", !open);
+    rangeBtn.setAttribute("aria-expanded", open);
+    rangeChevron.style.transform = open ? "rotate(90deg)" : "";
+  }
+  function markActiveOption() {
+    rangeOptions.forEach((opt) => {
+      const active = opt.dataset.range === activeRange;
+      opt.classList.toggle("text-blue-600", active);
+      opt.classList.toggle("font-semibold", active);
+      opt.classList.toggle("text-slate-700", !active);
+      opt.setAttribute("aria-selected", active);
+    });
+    document.getElementById("range-label").textContent = RANGES[activeRange].label;
+  }
+
+  rangeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setMenuOpen(rangeMenu.classList.contains("hidden"));
+  });
+  document.addEventListener("click", () => setMenuOpen(false));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenuOpen(false); });
+  rangeOptions.forEach((opt) => {
+    opt.addEventListener("click", () => {
+      setMenuOpen(false);
+      if (opt.dataset.range === activeRange) return;
+      activeRange = opt.dataset.range;
+      markActiveOption();
+      loadReport();
+    });
+  });
+
+  // ---- chart ----
+  const trendEmpty = document.getElementById("trend-empty");
+  const trendCanvas = document.getElementById("revenue-trend-chart");
+  const trendChart = new Chart(trendCanvas, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderColor: "#2563EB",
+        borderWidth: 2.5,
+        pointRadius: (ctx) => (ctx.chart.data.labels.length <= 2 ? 4 : 0),
+        pointBackgroundColor: "#2563EB",
+        pointHitRadius: 8,
+        tension: 0.35,
+        fill: true,
+        backgroundColor: (ctx) => {
+          const { chartArea, ctx: c } = ctx.chart;
+          if (!chartArea) return "transparent";
+          const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, "rgba(37, 99, 235, 0.18)");
+          gradient.addColorStop(1, "rgba(37, 99, 235, 0)");
+          return gradient;
+        },
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => trendChart.$fullLabels?.[items[0].dataIndex] ?? items[0].label,
+            label: (item) => formatNaira(item.parsed.y),
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: "#94A3B8", font: { size: 11 }, maxTicksLimit: 7, maxRotation: 0 },
+        },
+        y: {
+          beginAtZero: true,
+          suggestedMax: 1000,
+          grid: { color: "#F1F5F9" },
+          border: { display: false },
+          ticks: {
+            color: "#94A3B8",
+            font: { size: 11 },
+            maxTicksLimit: 5,
+            callback: (value) => formatCompactNaira(value),
+          },
+        },
+      },
+    },
+  });
+
+  // ---- % change badge ----
+  const CHEVRON_UP = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+  const CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  function renderDelta(el, current, previous, periodLabel) {
+    el.className = "flex items-center gap-0.5 text-xs font-semibold mt-1 min-h-[1rem]";
+    el.title = `vs ${periodLabel}`;
+    // No baseline (previous period had nothing) → a % change isn't meaningful.
+    if (!previous) {
+      el.classList.add("text-slate-400");
+      el.textContent = "—";
+      return;
+    }
+    const pct = Math.round(((current - previous) / previous) * 100);
+    if (pct > 0) {
+      el.classList.add("text-emerald-500");
+      el.innerHTML = `${CHEVRON_UP}${pct}%`;
+    } else if (pct < 0) {
+      el.classList.add("text-rose-500");
+      el.innerHTML = `${CHEVRON_DOWN}${Math.abs(pct)}%`;
+    } else {
+      el.classList.add("text-slate-400");
+      el.textContent = "0%";
+    }
+  }
+
+  // ---- top customers ----
+  const topList = document.getElementById("top-customers");
+  const topEmpty = document.getElementById("top-empty");
+  const topToggle = document.getElementById("top-toggle");
+  let topRows = [];
+  let topExpanded = false;
+
+  function renderTopCustomers() {
+    topEmpty.classList.toggle("hidden", topRows.length > 0);
+    topToggle.classList.toggle("hidden", topRows.length <= TOP_PREVIEW);
+    topToggle.textContent = topExpanded ? "Show less" : "View all";
+    const rows = topExpanded ? topRows : topRows.slice(0, TOP_PREVIEW);
+    topList.innerHTML = rows.map((row, i) => `
+      <a href="customer-detail.html?id=${encodeURIComponent(row.id)}" class="w-full flex items-center gap-3 py-2.5 text-left">
+        <span class="w-9 h-9 shrink-0 rounded-full text-white flex items-center justify-center text-xs font-semibold" style="background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${escapeHtml(row.name.charAt(0).toUpperCase())}</span>
+        <span class="flex-1 min-w-0 truncate text-sm font-medium text-slate-900">${escapeHtml(row.name)}</span>
+        <span class="text-sm font-semibold text-slate-900">${formatNaira(row.total)}</span>
+      </a>`).join("");
+  }
+  topToggle.addEventListener("click", () => {
+    topExpanded = !topExpanded;
+    renderTopCustomers();
+  });
+
+  // ---- load + render ----
+  const content = document.getElementById("report-content");
+  let requestId = 0;
+
+  async function loadReport() {
+    const thisRequest = ++requestId;
+    content.classList.add("opacity-50");
+    content.setAttribute("aria-busy", "true");
+
+    const { start, end, days, prevStart } = getPeriods(activeRange);
+    const [{ data: charges, error: chargesError }, { data: payments, error: paymentsError }, { data: customers }] =
+      await Promise.all([
+        listChargesInRange(prevStart, end),
+        listPaymentsInRange(prevStart, end),
+        listCustomersBasic(),
+      ]);
+    const error = chargesError || paymentsError;
+    if (thisRequest !== requestId) return; // a newer range was picked meanwhile
+
+    content.classList.remove("opacity-50");
+    content.setAttribute("aria-busy", "false");
+    if (error) {
+      console.error("report load failed", error);
+      showToast("Couldn't load report. Try again.");
+      return;
+    }
+
+    const dayIndex = new Map();
+    const dayDates = Array.from({ length: days }, (_, i) => addDays(start, i));
+    dayDates.forEach((d, i) => dayIndex.set(dayKey(d), i));
+
+    const daily = new Array(days).fill(0);
+    const byCustomer = new Map();
+    let revenue = 0, count = 0, prevRevenue = 0, prevCount = 0;
+
+    // Total Charges = number of charges billed in the period.
+    for (const row of charges) {
+      if (new Date(row.created_at) < start) prevCount += 1;
+      else count += 1;
+    }
+
+    // Revenue = payments collected in the period (drives the trend and Top Customers too).
+    for (const row of payments) {
+      const amount = Number(row.amount) || 0;
+      const received = new Date(row.created_at);
+      if (received < start) {
+        prevRevenue += amount;
+        continue;
+      }
+      revenue += amount;
+      const idx = dayIndex.get(dayKey(received));
+      if (idx !== undefined) daily[idx] += amount;
+      byCustomer.set(row.customer_id, (byCustomer.get(row.customer_id) || 0) + amount);
+    }
+
+    const periodLabel = activeRange === "month" ? "the previous period" : `the previous ${days} days`;
+    document.getElementById("total-revenue").textContent = formatNaira(revenue);
+    document.getElementById("total-charges").textContent = count.toLocaleString("en-NG");
+    renderDelta(document.getElementById("revenue-delta"), revenue, prevRevenue, periodLabel);
+    renderDelta(document.getElementById("charges-delta"), count, prevCount, periodLabel);
+
+    // Trend: weekday names for a week, "Sep 22" style dates for longer ranges.
+    const shortLabels = dayDates.map((d) => (days <= 7 ? WEEKDAYS[d.getDay()] : `${MONTHS[d.getMonth()]} ${d.getDate()}`));
+    trendChart.$fullLabels = dayDates.map((d) => `${WEEKDAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`);
+    trendChart.data.labels = shortLabels;
+    trendChart.data.datasets[0].data = daily;
+    trendChart.update();
+    trendCanvas.setAttribute("aria-label", `Revenue trend, ${RANGES[activeRange].label.toLowerCase()}`);
+    trendEmpty.classList.toggle("hidden", revenue > 0);
+
+    const names = new Map((customers || []).map((c) => [c.id, c.full_name]));
+    topRows = [...byCustomer.entries()]
+      .map(([id, total]) => ({ id, total, name: names.get(id) || "Unknown" }))
+      .sort((a, b) => b.total - a.total);
+    topExpanded = false;
+    renderTopCustomers();
+  }
+
+  markActiveOption();
+  loadReport();
+</script>
+</body>
+</html>
