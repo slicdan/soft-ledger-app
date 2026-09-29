@@ -2,6 +2,36 @@
    Keep this file for things Tailwind utilities don't cover cleanly:
    custom focus rings, font stack, and one-off brand tokens. */
 
+/* Inter is bundled: the first screen must not depend on the network. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-700-normal.woff2") format("woff2");
+}
+
 :root {
   --sl-blue: #2563EB;
   --sl-blue-dark: #1D4ED8;
@@ -138,6 +168,7 @@ body {
   padding: 0;
   overflow-y: auto;
   list-style: none;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -296,7 +327,13 @@ body {
 
 /* ---------- Onboarding (index.html + js/onboarding.js) ----------
    Plain CSS on purpose: this is the first screen after the native splash,
-   so it must not wait on the Tailwind CDN script (unstyled flash). */
+   so it must not wait on the Tailwind CDN script (unstyled flash).
+   Tailwind's preflight is absent here, hence the border-box reset.
+   Vertical metrics use clamp(min, vh, max) so every step fits the webview
+   (~360x700) without scrolling; large phones get the full-size values. */
+.ob-body *,
+.ob-body *::before,
+.ob-body *::after { box-sizing: border-box; }
 .ob-body {
   margin: 0;
   overflow: hidden;
@@ -318,7 +355,7 @@ body {
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 52px;
   padding: 0 20px;
 }
 .ob-back {
@@ -363,8 +400,9 @@ body {
   flex: 0 0 100%;
   min-width: 0;
   height: 100%;
-  padding: 4px 24px 16px;
-  overflow-y: auto;
+  padding: 4px 24px 12px;
+  overflow-x: hidden;
+  overflow-y: auto; /* safety net only; steps are sized to fit */
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -372,16 +410,16 @@ body {
 
 .ob-h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: clamp(22px, 3.7vh, 30px);
   font-weight: 700;
-  line-height: 1.16;
+  line-height: 1.18;
   letter-spacing: -0.025em;
   color: var(--sl-ink);
 }
 .ob-lead {
-  margin: 14px 0 0;
-  font-size: 15px;
-  line-height: 1.55;
+  margin: clamp(8px, 1.7vh, 14px) 0 0;
+  font-size: clamp(13.5px, 2vh, 15px);
+  line-height: 1.5;
   color: var(--sl-muted);
 }
 
@@ -396,9 +434,9 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
-.ob-brand img { width: 40px; height: 40px; }
+.ob-brand img { width: 38px; height: 38px; }
 .ob-word {
   font-size: 26px;
   letter-spacing: -0.02em;
@@ -406,30 +444,32 @@ body {
 }
 .ob-word span { font-weight: 400; }
 .ob-word b { font-weight: 700; }
-.ob-panel--welcome .ob-h1 { margin-top: 32px; font-size: 32px; }
+.ob-panel--welcome .ob-h1 {
+  margin-top: clamp(16px, 4.4vh, 40px);
+  font-size: clamp(26px, 4.4vh, 32px);
+}
 .ob-panel--welcome .ob-lead { max-width: 300px; }
 .ob-hero {
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
-  max-height: 360px;
-  margin-top: 8px;
+  max-width: 320px;
+  margin: 8px auto 0;
   object-fit: contain;
-  mix-blend-mode: multiply; /* source art sits on near-white; blends into the page tint */
 }
 
 /* Step 2 — how it helps */
 .ob-eyebrow {
-  margin: 8px 0 10px;
-  font-size: 15px;
+  margin: 4px 0 clamp(6px, 1.2vh, 10px);
+  font-size: 14.5px;
   font-weight: 500;
   color: var(--sl-muted);
 }
 .ob-features {
   display: flex;
   flex-direction: column;
-  gap: 26px;
-  margin: 28px 0 0;
+  gap: clamp(10px, 2.3vh, 26px);
+  margin: clamp(12px, 2.4vh, 28px) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -442,8 +482,8 @@ body {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: clamp(42px, 6.4vh, 58px);
+  height: clamp(42px, 6.4vh, 58px);
   border-radius: 18px;
 }
 .ob-ico--blue   { color: #2563EB; background: #E9F1FE; }
@@ -451,25 +491,27 @@ body {
 .ob-ico--violet { color: #6D4AE6; background: #EFEBFD; }
 .ob-ico--amber  { color: #F08A0C; background: #FEF1DE; }
 .ob-feature h2 {
-  margin: 2px 0 0;
-  font-size: 16px;
+  margin: 1px 0 0;
+  font-size: 15.5px;
   font-weight: 600;
   color: var(--sl-ink);
 }
 .ob-feature p {
-  margin: 4px 0 0;
-  font-size: 14px;
-  line-height: 1.5;
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.42;
   color: var(--sl-muted);
 }
 
 /* Step 3 — business type */
-.ob-panel--type .ob-h1 { margin-top: 8px; }
+.ob-panel--type .ob-h1 { margin-top: 4px; }
 .ob-types {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 24px 0 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: clamp(8px, 1.5vh, 14px);
+  min-width: 0;
+  margin: clamp(10px, 2vh, 24px) 0 0;
   padding: 0;
   border: 0;
 }
@@ -489,12 +531,12 @@ body {
   cursor: pointer;
 }
 .ob-type-card {
+  display: block;
   height: 100%;
-  box-sizing: border-box;
-  padding: 16px 14px 18px;
+  padding: clamp(9px, 1.6vh, 16px) 12px clamp(9px, 1.6vh, 16px);
   background: #fff;
   border: 1.5px solid #E5EAF2;
-  border-radius: 20px;
+  border-radius: 18px;
   transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
 }
 .ob-type input:checked + .ob-type-card {
@@ -506,26 +548,32 @@ body {
   outline: 2px solid var(--sl-blue-dark);
   outline-offset: 2px;
 }
-.ob-type .ob-ico { width: 52px; height: 52px; border-radius: 16px; }
+.ob-type .ob-ico {
+  width: clamp(34px, 5vh, 50px);
+  height: clamp(34px, 5vh, 50px);
+  border-radius: 14px;
+}
+.ob-type .ob-ico svg { width: 22px; height: 22px; }
 .ob-type-name {
   display: block;
-  margin-top: 18px;
-  font-size: 15px;
+  margin-top: clamp(7px, 1.4vh, 16px);
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--sl-ink);
 }
 .ob-type-desc {
   display: block;
-  margin-top: 4px;
-  font-size: 12.5px;
-  line-height: 1.45;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.35;
   color: var(--sl-muted);
 }
 .ob-type input:checked + .ob-type-card .ob-type-name { color: #1D4ED8; }
 .ob-check {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   display: grid;
   place-items: center;
   width: 22px;
@@ -546,13 +594,13 @@ body {
 /* Footer: progress + primary action */
 .ob-foot {
   flex-shrink: 0;
-  padding: 12px 24px 20px;
+  padding: 8px 24px 18px;
 }
 .ob-dots {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: clamp(12px, 2.4vh, 20px);
 }
 .ob-dot {
   width: 8px;
@@ -571,7 +619,7 @@ body {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  padding: 17px 24px;
+  padding: 16px 24px;
   font: inherit;
   font-size: 16px;
   font-weight: 600;
@@ -587,8 +635,4 @@ body {
   .ob-dot,
   .ob-check,
   .ob-type-card { transition: none; }
-}
-@media (max-height: 640px) {
-  .ob-panel--welcome .ob-h1 { margin-top: 20px; font-size: 28px; }
-  .ob-features { gap: 18px; }
 }
