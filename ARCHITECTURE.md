@@ -4,7 +4,7 @@
 
 ```
 softledger/
-├── index.html        splash / entry screen
+├── index.html        onboarding (welcome → how it helps → business type); native splash is Capacitor's
 ├── login.html         auth: log in
 ├── signup.html         auth: create account
 ├── dashboard.html      Home — live stats + recent activity
@@ -20,6 +20,7 @@ softledger/
 ├── js/
 │   ├── config.js         Supabase URL/anon key
 │   ├── supabase-client.js single shared client instance
+│   ├── onboarding.js      step nav (URL hash), swipe, business-type pick → localStorage
 │   ├── auth.js            all auth calls (signUp, signIn, signOut, session check)
 │   ├── customers.js       customer CRUD + balance reads
 │   ├── charges.js         charge creation + today's-total + date-range reads
@@ -45,6 +46,12 @@ softledger/
 - **Two tables (`charges`, `payments`), not one.** Their required fields differ (device/duration vs. payment method) enough that a single table would need a pile of nullable columns. A `v_transactions` view unions them for the screens that show both mixed together.
 - **Customer balance is computed, not stored.** `v_customer_balances` computes `sum(charges) − sum(payments)` on every read. A cached/denormalized balance column would need a trigger to stay correct and isn't worth it at this scale — revisit only if read volume makes the join too slow.
 - **`config.js` isolated.** Keys live in one file so environment swapping (dev/staging project) is a one-file change. Anon key is safe client-side; access control is enforced by Supabase Row Level Security (every table's rows are scoped to `auth.uid()`), not by anything in this repo.
+
+## Onboarding
+
+- `index.html` is the onboarding host: three panels in one page (shared progress dots, slide transition, hash-addressed steps so Android back walks steps). Plain CSS (`.ob-*` in `styles.css`), no Tailwind CDN, so the first screen has no unstyled flash.
+- Routing runs before paint: a stored Supabase session → `dashboard.html`; `sl_onboarded=1` in localStorage → `login.html`; `index.html?onboarding` replays the flow.
+- Business type is stored in `sl_business_type` and sent to Supabase as `user_metadata.business_type` on sign-up. `store-settings.html` does not read it yet (its Business Type row is static).
 
 ## Deferred (explicitly out of scope this phase)
 

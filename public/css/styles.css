@@ -293,3 +293,302 @@ body {
   line-height: 18px;
   color: #6B7280;
 }
+
+/* ---------- Onboarding (index.html + js/onboarding.js) ----------
+   Plain CSS on purpose: this is the first screen after the native splash,
+   so it must not wait on the Tailwind CDN script (unstyled flash). */
+.ob-body {
+  margin: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFD 100%);
+}
+.ob {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 420px;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.ob-top {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 20px;
+}
+.ob-back {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  color: var(--sl-ink);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+}
+.ob-back.is-off { visibility: hidden; }
+.ob-back:focus-visible,
+.ob-login:focus-visible {
+  outline: 2px solid var(--sl-blue-dark);
+  outline-offset: 2px;
+}
+.ob-login {
+  padding: 8px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sl-blue);
+  text-decoration: none;
+}
+
+.ob-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.ob-track {
+  display: flex;
+  height: 100%;
+}
+.ob-track.is-ready {
+  transition: transform 380ms cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+.ob-panel {
+  flex: 0 0 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 4px 24px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.ob-title:focus { outline: none; }
+
+.ob-h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -0.025em;
+  color: var(--sl-ink);
+}
+.ob-lead {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--sl-muted);
+}
+
+/* Step 1 — welcome */
+.ob-panel--welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.ob-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.ob-brand img { width: 40px; height: 40px; }
+.ob-word {
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  color: var(--sl-ink);
+}
+.ob-word span { font-weight: 400; }
+.ob-word b { font-weight: 700; }
+.ob-panel--welcome .ob-h1 { margin-top: 32px; font-size: 32px; }
+.ob-panel--welcome .ob-lead { max-width: 300px; }
+.ob-hero {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  max-height: 360px;
+  margin-top: 8px;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* source art sits on near-white; blends into the page tint */
+}
+
+/* Step 2 — how it helps */
+.ob-eyebrow {
+  margin: 8px 0 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--sl-muted);
+}
+.ob-features {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ob-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.ob-ico {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+.ob-ico--blue   { color: #2563EB; background: #E9F1FE; }
+.ob-ico--green  { color: #12A66B; background: #E6F6EE; }
+.ob-ico--violet { color: #6D4AE6; background: #EFEBFD; }
+.ob-ico--amber  { color: #F08A0C; background: #FEF1DE; }
+.ob-feature h2 {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sl-ink);
+}
+.ob-feature p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sl-muted);
+}
+
+/* Step 3 — business type */
+.ob-panel--type .ob-h1 { margin-top: 8px; }
+.ob-types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  border: 0;
+}
+.ob-type {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ob-type input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ob-type-card {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px 14px 18px;
+  background: #fff;
+  border: 1.5px solid #E5EAF2;
+  border-radius: 20px;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.ob-type input:checked + .ob-type-card {
+  background: #F5F8FF;
+  border-color: var(--sl-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.ob-type input:focus-visible + .ob-type-card {
+  outline: 2px solid var(--sl-blue-dark);
+  outline-offset: 2px;
+}
+.ob-type .ob-ico { width: 52px; height: 52px; border-radius: 16px; }
+.ob-type-name {
+  display: block;
+  margin-top: 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sl-ink);
+}
+.ob-type-desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--sl-muted);
+}
+.ob-type input:checked + .ob-type-card .ob-type-name { color: #1D4ED8; }
+.ob-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: #fff;
+  background: var(--sl-blue);
+  border-radius: 9999px;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 150ms ease, transform 200ms cubic-bezier(0.3, 1.5, 0.5, 1);
+  pointer-events: none;
+}
+.ob-type input:checked ~ .ob-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Footer: progress + primary action */
+.ob-foot {
+  flex-shrink: 0;
+  padding: 12px 24px 20px;
+}
+.ob-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  background: #D5DDEA;
+  border-radius: 9999px;
+  transition: width 260ms ease, background-color 260ms ease;
+}
+.ob-dot.is-active {
+  width: 24px;
+  background: var(--sl-blue);
+}
+.ob-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 17px 24px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-track.is-ready,
+  .ob-dot,
+  .ob-check,
+  .ob-type-card { transition: none; }
+}
+@media (max-height: 640px) {
+  .ob-panel--welcome .ob-h1 { margin-top: 20px; font-size: 28px; }
+  .ob-features { gap: 18px; }
+}

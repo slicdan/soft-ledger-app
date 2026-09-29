@@ -3,40 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
 <title>SoftLedger — Track. Manage. Keep it simple.</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Route before first paint. Signed-in users go straight to the dashboard
+  // (dashboard.html's requireAuth() is the real gate and bounces a stale
+  // session to login); users who already finished onboarding go to login.
+  // Append ?onboarding to replay it (used by the logo on login/signup).
+  (function () {
+    function hasSession(store) {
+      for (var i = 0; i < store.length; i++) {
+        if (/^sb-.+-auth-token$/.test(store.key(i))) return true;
+      }
+      return false;
+    }
+    try {
+      if (hasSession(localStorage) || hasSession(sessionStorage)) {
+        location.replace("dashboard.html");
+      } else if (location.search.indexOf("onboarding") === -1 &&
+                 localStorage.getItem("sl_onboarded") === "1") {
+        location.replace("login.html");
+      }
+    } catch (e) { /* storage blocked: show onboarding */ }
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="min-h-screen bg-white flex flex-col items-center justify-between px-6 py-16">
+<body class="ob-body">
 
-  <div class="flex-1 flex flex-col items-center justify-center text-center max-w-sm">
-    <img src="assets/logo.svg" alt="" class="w-16 h-16 mb-6">
+<main class="ob">
 
-    <h1 class="text-3xl font-extrabold tracking-tight">
-      <span class="text-slate-900">Soft</span><span class="text-blue-600">Ledger</span>
-    </h1>
+  <header class="ob-top">
+    <button id="ob-back" class="ob-back is-off" type="button" aria-label="Back" tabindex="-1">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <a id="ob-login" class="ob-login" href="login.html">Log in</a>
+  </header>
 
-    <p class="mt-2 text-slate-500 text-base">Track. Manage. Keep it simple.</p>
+  <div class="ob-viewport" id="ob-viewport">
+    <div class="ob-track" id="ob-track">
 
-    <p class="mt-6 text-sm text-slate-400 leading-relaxed">
-      Manage your customers, charges,<br>and payments — all in one place.
-    </p>
+      <!-- 1 · Welcome -->
+      <section class="ob-panel ob-panel--welcome" aria-label="Welcome">
+        <div class="ob-brand">
+          <img src="assets/logo.svg" alt="">
+          <span class="ob-word"><span>Soft</span><b>Ledger</b></span>
+        </div>
+        <h1 class="ob-h1 ob-title" tabindex="-1">Welcome to SoftLedger!</h1>
+        <p class="ob-lead">The simple and reliable way to manage your customers, track payments and grow your business.</p>
+        <img class="ob-hero" src="assets/onboarding-welcome.webp" width="880" height="790" alt="" decoding="async">
+      </section>
+
+      <!-- 2 · How SoftLedger helps -->
+      <section class="ob-panel" aria-label="How SoftLedger helps">
+        <p class="ob-eyebrow">How SoftLedger helps</p>
+        <h1 class="ob-h1 ob-title" tabindex="-1">Built for your business, designed for your growth.</h1>
+        <p class="ob-lead">SoftLedger keeps your operations organized, gives you better visibility and helps you make smarter decisions — all in one place.</p>
+
+        <ul class="ob-features">
+          <li class="ob-feature">
+            <span class="ob-ico ob-ico--blue" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <div>
+              <h2>Manage Customers</h2>
+              <p>Keep track of your customers, their services and full history.</p>
+            </div>
+          </li>
+          <li class="ob-feature">
+            <span class="ob-ico ob-ico--green" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+            </span>
+            <div>
+              <h2>Track Charges &amp; Payments</h2>
+              <p>Record charges and payments separately, with flexible payment options.</p>
+            </div>
+          </li>
+          <li class="ob-feature">
+            <span class="ob-ico ob-ico--violet" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="9"/><line x1="18" y1="20" x2="18" y2="4"/></svg>
+            </span>
+            <div>
+              <h2>Get Clear Insights</h2>
+              <p>See your outstanding balances, revenue and business activity at a glance.</p>
+            </div>
+          </li>
+          <li class="ob-feature">
+            <span class="ob-ico ob-ico--amber" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg>
+            </span>
+            <div>
+              <h2>Stay in Control</h2>
+              <p>Edit or delete when needed, with safeguards to protect your records.</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 3 · Business type -->
+      <section class="ob-panel ob-panel--type" aria-label="Business type">
+        <h1 class="ob-h1 ob-title" tabindex="-1">What type of business do you run?</h1>
+        <p class="ob-lead">Choose the option that best describes your business. You can change this later in settings.</p>
+
+        <fieldset class="ob-types">
+          <legend hidden>Business type</legend>
+
+          <label class="ob-type">
+            <input type="radio" name="business" value="charging" checked>
+            <span class="ob-type-card">
+              <span class="ob-ico ob-ico--blue" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M12.8 7.5 9.8 12.2h2.4l-1 4.3 3-4.7h-2.4z"/></svg>
+              </span>
+              <span class="ob-type-name">Charging Store</span>
+              <span class="ob-type-desc">Phone, power bank, &amp; device charging</span>
+            </span>
+            <span class="ob-check" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>
+          </label>
+
+          <label class="ob-type">
+            <input type="radio" name="business" value="retail">
+            <span class="ob-type-card">
+              <span class="ob-ico ob-ico--violet" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.6-5h14.8L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg>
+              </span>
+              <span class="ob-type-name">Retail Store</span>
+              <span class="ob-type-desc">General retail business</span>
+            </span>
+            <span class="ob-check" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>
+          </label>
+
+          <label class="ob-type">
+            <input type="radio" name="business" value="food">
+            <span class="ob-type-card">
+              <span class="ob-ico ob-ico--green" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3v5a2.5 2.5 0 0 0 5 0V3"/><path d="M7 3v18"/><path d="M17 21V3c-2 1.5-3 4-3 7 0 1.7 1.2 2.6 3 3"/></svg>
+              </span>
+              <span class="ob-type-name">Food &amp; Beverage</span>
+              <span class="ob-type-desc">Restaurant, food outlet, café, etc.</span>
+            </span>
+            <span class="ob-check" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>
+          </label>
+
+          <label class="ob-type">
+            <input type="radio" name="business" value="salon">
+            <span class="ob-type-card">
+              <span class="ob-ico" style="color:#E0457B;background:#FDEBF2" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="8.1" y1="8.1" x2="20" y2="20"/><line x1="8.1" y1="15.9" x2="20" y2="4"/></svg>
+              </span>
+              <span class="ob-type-name">Salon &amp; Beauty</span>
+              <span class="ob-type-desc">Hair, nails, spa, wellness, etc.</span>
+            </span>
+            <span class="ob-check" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>
+          </label>
+
+          <label class="ob-type">
+            <input type="radio" name="business" value="education">
+            <span class="ob-type-card">
+              <span class="ob-ico ob-ico--amber" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.6V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.4"/><path d="M22 9v6"/></svg>
+              </span>
+              <span class="ob-type-name">Education</span>
+              <span class="ob-type-desc">School, tutoring, training, etc.</span>
+            </span>
+            <span class="ob-check" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>
+          </label>
+
+          <label class="ob-type">
+            <input type="radio" name="business" value="other">
+            <span class="ob-type-card">
+              <span class="ob-ico" style="color:#8391A7;background:#F0F3F8" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg>
+              </span>
+              <span class="ob-type-name">Other</span>
+              <span class="ob-type-desc">Something else</span>
+            </span>
+            <span class="ob-check" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>
+          </label>
+        </fieldset>
+      </section>
+
+    </div>
   </div>
 
-  <div class="w-full max-w-sm space-y-4">
-    <a href="signup.html"
-       class="sl-btn-primary w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-full">
-      Get Started
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>
-    </a>
-    <a href="login.html" class="block text-center sl-link font-medium py-1">Log In</a>
-  </div>
+  <footer class="ob-foot">
+    <div class="ob-dots" role="presentation">
+      <span class="ob-dot is-active"></span><span class="ob-dot"></span><span class="ob-dot"></span>
+    </div>
+    <button id="ob-cta" class="ob-cta sl-btn-primary" type="button">
+      <span id="ob-cta-label">Next</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </footer>
 
+</main>
+
+<script src="js/onboarding.js"></script>
 </body>
 </html>

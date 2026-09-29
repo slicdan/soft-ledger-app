@@ -8,12 +8,13 @@ export async function resetPassword(email) {
   });
 }
 
-export async function signUp({ email, password, fullName }) {
+export async function signUp({ email, password, fullName, businessType }) {
   return supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName },
+      // business_type comes from onboarding (charging | retail | food | salon | education | other).
+      data: { full_name: fullName, ...(businessType ? { business_type: businessType } : {}) },
       emailRedirectTo: `${window.location.origin}/login.html`,
     },
   });
