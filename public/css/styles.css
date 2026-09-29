@@ -442,8 +442,10 @@ body {
   letter-spacing: -0.02em;
   color: var(--sl-ink);
 }
-.ob-word span { font-weight: 400; }
+.ob-word span,
 .ob-word b { font-weight: 700; }
+.ob-word span { color: #0F172A; }
+.ob-word b { color: #2763E7; }
 .ob-panel--welcome .ob-h1 {
   margin-top: clamp(16px, 4.4vh, 40px);
   font-size: clamp(26px, 4.4vh, 32px);
