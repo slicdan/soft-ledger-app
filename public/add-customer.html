@@ -91,7 +91,7 @@
     setLoading(submitBtn, false);
 
     if (error) {
-      showToast("Couldn't save customer — try again");
+      showToast("Couldn't save customer", "error", "Please try again");
       return;
     }
     window.location.href = "customers.html";

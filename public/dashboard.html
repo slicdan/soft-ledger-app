@@ -136,7 +136,8 @@
   import { supabase } from "./js/supabase-client.js";
   import { showToast, formatTimeAgo, formatNaira, countUpNaira } from "./js/utils.js";
   import { listCustomersWithBalances } from "./js/customers.js";
-  import { getTodayChargesTotal, listChargesInRange } from "./js/charges.js?v=2";
+  import { getTodayChargesTotal } from "./js/charges.js?v=2";
+  import { listPaymentsInRange } from "./js/payments.js?v=2";
   import { listRecentTransactions } from "./js/transactions.js";
 
   const session = await requireAuth();
@@ -162,9 +163,10 @@
     });
   });
 
-  // Revenue card: charges billed per local day (same definition as today's
-  // total) for the last TREND_DAYS days, oldest first. Yesterday's total and
-  // the trend bars both come from this one range read.
+  // Revenue card: payments actually received per local day (same definition
+  // as reports.html) for the last TREND_DAYS days, oldest first. Today's
+  // revenue, yesterday's baseline and the trend bars all come from this one
+  // range read. "Total Today" stays on charges billed, read separately.
   const TREND_DAYS = 4;
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -176,12 +178,12 @@
     { data: customers, error: customersError },
     { total: todayTotal },
     { data: recent, error: recentError },
-    { data: trendRows, error: trendError },
+    { data: paymentRows, error: paymentsError },
   ] = await Promise.all([
     listCustomersWithBalances(),
     getTodayChargesTotal(),
     listRecentTransactions(RECENT_ACTIVITY_LIMIT),
-    listChargesInRange(trendStart, addDays(todayStart, 1)),
+    listPaymentsInRange(trendStart, addDays(todayStart, 1)),
   ]);
 
   if (!customersError && customers) {
@@ -191,7 +193,6 @@
     );
   }
   document.getElementById("stat-total-today").textContent = formatNaira(todayTotal);
-  countUpNaira(document.getElementById("revenue-today"), todayTotal);
 
   const activityList = document.getElementById("recent-activity-list");
   const activityEmpty = document.getElementById("recent-activity-empty");
@@ -241,13 +242,15 @@
     },
   });
 
-  if (!trendError && trendRows) {
+  if (!paymentsError && paymentRows) {
     const daily = new Array(TREND_DAYS).fill(0);
     const dayIndex = new Map(daily.map((_, i) => [dayKey(addDays(trendStart, i)), i]));
-    for (const row of trendRows) {
+    for (const row of paymentRows) {
       const i = dayIndex.get(dayKey(new Date(row.created_at)));
       if (i !== undefined) daily[i] += Number(row.amount) || 0;
     }
+    const revenueToday = daily[TREND_DAYS - 1];
+    countUpNaira(document.getElementById("revenue-today"), revenueToday);
 
     // Chart: oldest → today.
     const labels = daily.map((_, i) => addDays(trendStart, i).toLocaleDateString("en-NG", { weekday: "short" }));
@@ -259,15 +262,15 @@
       `Revenue, last ${TREND_DAYS} days: ${labels.map((l, i) => `${l} ${formatNaira(daily[i])}`).join(", ")}`
     );
 
-    // % change vs yesterday. Both zero → 0%. No baseline (yesterday 0, today
-    // > 0) → "—", never Infinity/NaN.
+    // % change in payments received, today vs yesterday. Both zero → 0%.
+    // No baseline (yesterday 0, today > 0) → "—", never Infinity/NaN.
     const CHEVRON_UP = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
     const CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
     const deltaEl = document.getElementById("revenue-delta");
     const yesterdayTotal = daily[TREND_DAYS - 2];
     deltaEl.title = "vs yesterday";
     if (yesterdayTotal > 0) {
-      const pct = Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100);
+      const pct = Math.round(((revenueToday - yesterdayTotal) / yesterdayTotal) * 100);
       if (pct > 0) {
         deltaEl.classList.add("text-emerald-400");
         deltaEl.innerHTML = `${CHEVRON_UP}${pct}%`;
@@ -280,7 +283,7 @@
       }
     } else {
       deltaEl.classList.add("text-slate-400");
-      deltaEl.textContent = todayTotal > 0 ? "—" : "0%";
+      deltaEl.textContent = revenueToday > 0 ? "—" : "0%";
     }
   }
 </script>

@@ -108,18 +108,63 @@ export function formatTimeAgo(timestamp) {
 }
 
 let toastTimer;
-export function showToast(message) {
+
+const TOAST_BASE =
+  "fixed left-1/2 -translate-x-1/2 bottom-24 z-50 opacity-0 transition-opacity duration-200 pointer-events-none";
+const TOAST_DEFAULT =
+  "bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg";
+
+const ICON_SUCCESS =
+  `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#fff"/><polyline points="7.5 12.5 10.5 15.5 16.5 9" stroke="#4FA85B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ICON_ERROR =
+  `<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><polygon points="13,3 27,3 37,13 37,27 27,37 13,37 3,27 3,13" fill="#D92D20"/><rect x="18.4" y="10.5" width="3.2" height="12" rx="1.6" fill="#fff"/><circle cx="20" cy="27.6" r="2" fill="#fff"/></svg>`;
+const ICON_CLOSE =
+  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`;
+
+// Card variants. Errors stay longer because they carry a second line to read.
+const TOAST_CARDS = {
+  success: { cls: "sl-toast-success", icon: ICON_SUCCESS, ms: 1800 },
+  error: { cls: "sl-toast-error", icon: ICON_ERROR, ms: 3500 },
+};
+
+function hideToast(el) {
+  clearTimeout(toastTimer);
+  el.classList.add("opacity-0", "pointer-events-none", "is-hidden");
+}
+
+// type: "default" (dark pill, used for notices and validation),
+//       "success" (green card, check icon), or
+//       "error"   (white card, red alert icon; optional `detail` second line).
+// Card variants have a close button and dismiss on tap.
+export function showToast(message, type = "default", detail = "") {
   let el = document.getElementById("sl-toast");
   if (!el) {
     el = document.createElement("div");
     el.id = "sl-toast";
-    el.className =
-      "fixed left-1/2 -translate-x-1/2 bottom-24 z-50 bg-slate-900 text-white text-sm font-medium " +
-      "px-4 py-2.5 rounded-full shadow-lg opacity-0 transition-opacity duration-200 pointer-events-none";
     document.body.appendChild(el);
   }
-  el.textContent = message;
-  el.classList.remove("opacity-0");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add("opacity-0"), 1800);
+
+  const card = TOAST_CARDS[type];
+  let ms = 1800;
+  if (card) {
+    ms = card.ms;
+    el.className = `sl-toast-card ${card.cls} is-hidden ${TOAST_BASE}`;
+    el.setAttribute("role", type === "error" ? "alert" : "status");
+    el.innerHTML = `<span class="sl-toast-icon">${card.icon}</span>` +
+      `<span class="sl-toast-body"><span class="sl-toast-text"></span><span class="sl-toast-detail"></span></span>` +
+      `<button type="button" class="sl-toast-close" aria-label="Dismiss">${ICON_CLOSE}</button>`;
+    el.querySelector(".sl-toast-text").textContent = message;
+    const detailEl = el.querySelector(".sl-toast-detail");
+    if (detail) detailEl.textContent = detail;
+    else detailEl.remove();
+    el.querySelector(".sl-toast-close").addEventListener("click", () => hideToast(el));
+    el.classList.remove("opacity-0", "pointer-events-none", "is-hidden");
+  } else {
+    el.className = `${TOAST_BASE} ${TOAST_DEFAULT}`;
+    el.removeAttribute("role");
+    el.textContent = message;
+    el.classList.remove("opacity-0");
+  }
+  toastTimer = setTimeout(() => hideToast(el), ms);
 }

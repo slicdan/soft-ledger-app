@@ -222,3 +222,74 @@ body {
   text-align: center;
   color: var(--sl-muted);
 }
+
+/* ---------- Card toasts (showToast(msg, "success" | "error", detail) in js/utils.js) ---------- */
+.sl-toast-card {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(92vw, 360px);
+  padding: 8px 14px 8px 8px;
+  font-size: 15px;
+  line-height: 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+.sl-toast-card.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.sl-toast-card:not(.is-hidden) {
+  pointer-events: auto;
+}
+.sl-toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+.sl-toast-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.sl-toast-close {
+  display: flex;
+  flex-shrink: 0;
+  padding: 6px;
+  color: #6B7280;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+.sl-toast-close:hover {
+  color: #374151;
+}
+
+.sl-toast-success {
+  color: #374151;
+  background: #EDF7EE;
+  border: 1px solid #D3E9D6;
+}
+.sl-toast-success .sl-toast-icon {
+  background: #5CB068;
+  border-radius: 10px;
+}
+
+.sl-toast-error {
+  color: #4B5563;
+  background: #fff;
+  border: 1px solid #ECEEF1;
+}
+.sl-toast-error .sl-toast-text {
+  font-weight: 600;
+}
+.sl-toast-detail {
+  font-size: 13px;
+  line-height: 18px;
+  color: #6B7280;
+}

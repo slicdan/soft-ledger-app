@@ -162,13 +162,16 @@
       method: selectedMethod,
       notes,
     });
-    setLoading(submitBtn, false);
 
     if (error) {
+      setLoading(submitBtn, false);
       showToast("Couldn't save payment — try again");
       return;
     }
-    window.location.href = "dashboard.html";
+    // Keep the button locked so a second tap can't double-record, and give
+    // the toast a moment to be seen before leaving the page.
+    showToast("Payment saved", "success");
+    setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
   });
 
   document.querySelectorAll("[data-toast]").forEach((el) => {

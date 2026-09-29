@@ -187,7 +187,7 @@
     setLoading(submitBtn, false);
 
     if (error) {
-      showToast("Couldn't save charge — try again");
+      showToast("Couldn't save charge", "error", "Please try again");
       return;
     }
     window.location.href = "dashboard.html";

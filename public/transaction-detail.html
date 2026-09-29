@@ -307,7 +307,7 @@
     setLoading(submitBtn, false);
 
     if (error) {
-      showToast("Couldn't save changes — try again");
+      showToast("Couldn't save changes", "error", "Please try again");
       return;
     }
     window.location.reload();
@@ -319,7 +319,7 @@
 
     const { error } = isCharge ? await deleteCharge(id) : await deletePayment(id);
     if (error) {
-      showToast("Couldn't delete — try again");
+      showToast("Couldn't delete", "error", "Please try again");
       return;
     }
     window.location.href = "transactions.html";

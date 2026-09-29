@@ -331,7 +331,7 @@
     content.setAttribute("aria-busy", "false");
     if (error) {
       console.error("report load failed", error);
-      showToast("Couldn't load report. Try again.");
+      showToast("Couldn't load report", "error", "Please try again");
       return;
     }
 

@@ -182,7 +182,7 @@
     setLoading(submitBtn, false);
 
     if (error) {
-      showToast("Couldn't save changes — try again");
+      showToast("Couldn't save changes", "error", "Please try again");
       return;
     }
     window.location.reload();
@@ -198,7 +198,7 @@
 
     const { error } = await deleteCustomer(id);
     if (error) {
-      showToast("Couldn't delete — this customer may have transaction history");
+      showToast("Couldn't delete customer", "error", "They may have transaction history");
       return;
     }
     window.location.href = "customers.html";
