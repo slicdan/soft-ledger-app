@@ -154,11 +154,11 @@
   const fullName = user?.user_metadata?.full_name;
   document.getElementById("user-name").textContent = fullName ? fullName.split(" ")[0] : "";
 
-  document.getElementById("notif-btn").addEventListener("click", () => showToast("Notifications coming soon"));
+  document.getElementById("notif-btn").addEventListener("click", () => showToast("Coming Soon"));
   document.querySelectorAll("[data-toast]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
-      showToast(el.dataset.toast);
+      showToast("Coming Soon");
     });
   });
 

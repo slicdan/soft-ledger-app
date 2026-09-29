@@ -24,7 +24,7 @@
 
     <!-- Cards -->
     <div class="mt-6 space-y-3">
-      <button data-toast="FAQs coming soon"
+      <button
         class="w-full flex items-center gap-3 border border-slate-100 rounded-2xl px-4 py-4 text-left">
         <span class="w-10 h-10 shrink-0 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -42,7 +42,7 @@
         </svg>
       </button>
 
-      <button data-toast="Contact support coming soon"
+      <button
         class="w-full flex items-center gap-3 border border-slate-100 rounded-2xl px-4 py-4 text-left">
         <span class="w-10 h-10 shrink-0 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -58,7 +58,7 @@
         </svg>
       </button>
 
-      <button data-toast="Report a bug coming soon"
+      <button
         class="w-full flex items-center gap-3 border border-slate-100 rounded-2xl px-4 py-4 text-left">
         <span class="w-10 h-10 shrink-0 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -76,7 +76,7 @@
         </svg>
       </button>
 
-      <button data-toast="Feature request coming soon"
+      <button
         class="w-full flex items-center gap-3 border border-slate-100 rounded-2xl px-4 py-4 text-left">
         <span class="w-10 h-10 shrink-0 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,7 +136,7 @@
   document.querySelectorAll("[data-toast]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
-      showToast(el.dataset.toast);
+      showToast("Coming Soon");
     });
   });
 </script>

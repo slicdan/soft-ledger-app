@@ -25,7 +25,7 @@
     <!-- Store Information -->
     <h2 class="mt-6 text-sm font-bold text-slate-900">Store Information</h2>
     <div class="mt-2 divide-y divide-slate-100 border-t border-b border-slate-100">
-      <button data-toast="Edit store name coming soon" class="w-full flex items-center justify-between py-3.5 text-left">
+      <button class="w-full flex items-center justify-between py-3.5 text-left">
         <span class="text-sm text-slate-700">Store Name</span>
         <span class="flex items-center gap-1.5 text-sm font-medium text-slate-900">
           ChargeTrack
@@ -34,7 +34,7 @@
           </svg>
         </span>
       </button>
-      <button data-toast="Edit business type coming soon" class="w-full flex items-center justify-between py-3.5 text-left">
+      <button class="w-full flex items-center justify-between py-3.5 text-left">
         <span class="text-sm text-slate-700">Business Type</span>
         <span class="flex items-center gap-1.5 text-sm font-medium text-slate-900">
           Charging Store
@@ -43,7 +43,7 @@
           </svg>
         </span>
       </button>
-      <button data-toast="Edit location coming soon" class="w-full flex items-center justify-between py-3.5 text-left">
+      <button class="w-full flex items-center justify-between py-3.5 text-left">
         <span class="text-sm text-slate-700">Location</span>
         <span class="flex items-center gap-1.5 text-sm font-medium text-slate-900">
           Lagos, Nigeria
@@ -86,7 +86,7 @@
     <!-- Data Management -->
     <h2 class="mt-6 text-sm font-bold text-slate-900">Data Management</h2>
     <div class="mt-2 divide-y divide-slate-100 border-t border-b border-slate-100">
-      <button data-toast="Export data coming soon" class="w-full flex items-center gap-3 py-3.5 text-left">
+      <button class="w-full flex items-center gap-3 py-3.5 text-left">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 shrink-0">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -96,7 +96,7 @@
           <polyline points="9 18 15 12 9 6"/>
         </svg>
       </button>
-      <button data-toast="Clear cache coming soon" class="w-full flex items-center gap-3 py-3.5 text-left">
+      <button class="w-full flex items-center gap-3 py-3.5 text-left">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 shrink-0">
           <polyline points="3 6 5 6 21 6"/>
           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -156,13 +156,13 @@
   });
   document.getElementById("dark-mode-toggle").addEventListener("click", (e) => {
     e.preventDefault();
-    showToast("Dark mode coming soon");
+    showToast("Coming Soon");
   });
 
   document.querySelectorAll("[data-toast]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
-      showToast(el.dataset.toast);
+      showToast("Coming Soon");
     });
   });
 </script>
