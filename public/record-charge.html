@@ -27,10 +27,7 @@
       <!-- Customer -->
       <div>
         <p class="text-sm font-semibold text-slate-900 mb-2">Customer</p>
-        <select id="customer-select" required
-          class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition bg-white">
-          <option value="" disabled selected>Loading customers…</option>
-        </select>
+        <div id="customer-select"></div>
         <p id="no-customers-note" class="hidden mt-2 text-xs text-rose-500">
           No customers yet. <a href="add-customer.html" class="sl-link font-medium">Add one first</a>.
         </p>
@@ -111,22 +108,26 @@
 
 <script type="module">
   import { requireAuth } from "./js/auth.js";
+  import { createSelect } from "./js/custom-select.js";
   import { showToast, setLoading } from "./js/utils.js";
   import { listCustomersBasic } from "./js/customers.js";
   import { createCharge } from "./js/charges.js";
 
   await requireAuth();
 
-  const customerSelect = document.getElementById("customer-select");
+  const customerSelect = createSelect(document.getElementById("customer-select"), {
+    placeholder: "Loading customers…",
+    searchPlaceholder: "Search customer...",
+  });
   const { data: customers, error: customersError } = await listCustomersBasic();
   if (customersError || !customers || !customers.length) {
-    customerSelect.innerHTML = `<option value="" disabled selected>No customers available</option>`;
-    customerSelect.disabled = true;
+    customerSelect.setPlaceholder("No customers available");
+    customerSelect.setDisabled(true);
     document.getElementById("no-customers-note").classList.remove("hidden");
   } else {
-    customerSelect.innerHTML = customers
-      .map((c) => `<option value="${c.id}">${c.full_name} — ${c.phone}</option>`)
-      .join("");
+    customerSelect.setOptions(
+      customers.map((c) => ({ value: c.id, label: c.full_name, sub: c.phone }))
+    );
   }
 
   let selectedDevice = "Phone";
