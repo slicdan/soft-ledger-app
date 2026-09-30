@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="js/theme.js"></script>
+<title>Add Card — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto lg:max-w-sm px-5 pt-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="text-slate-900" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <h1 class="text-lg font-bold text-slate-900">Add Card</h1>
+    </div>
+
+    <form id="add-card-form" class="mt-6 space-y-5" novalidate>
+
+      <div>
+        <label for="card-no" class="block text-sm font-semibold text-slate-900 mb-1.5">Card No. <span class="text-rose-500">*</span></label>
+        <input id="card-no" type="text" inputmode="numeric" autocomplete="off" maxlength="20" required
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="e.g. 111">
+      </div>
+
+      <div>
+        <label for="full-name" class="block text-sm font-semibold text-slate-900 mb-1.5">Full Name (optional)</label>
+        <input id="full-name" type="text" autocomplete="off"
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="Enter cardholder's name">
+      </div>
+
+      <div>
+        <label for="phone" class="block text-sm font-semibold text-slate-900 mb-1.5">Phone Number (optional)</label>
+        <input id="phone" type="tel" autocomplete="off"
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="+234 801 234 5678">
+      </div>
+
+      <button type="submit"
+        class="sl-btn-primary w-full text-white font-semibold py-3.5 rounded-full mt-6">
+        Save Card
+      </button>
+    </form>
+  </div>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, setLoading } from "./js/utils.js";
+  import { createCard, CARD_DUPLICATE } from "./js/cards.js";
+
+  await requireAuth();
+
+  const cardNoInput = document.getElementById("card-no");
+
+  document.getElementById("add-card-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector("button[type=submit]");
+    const cardNo = cardNoInput.value.trim();
+    const fullName = document.getElementById("full-name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+
+    if (!cardNo) {
+      showToast("Card number is required");
+      cardNoInput.focus();
+      return;
+    }
+
+    setLoading(submitBtn, true, "Saving…");
+    const { error } = await createCard({ cardNo, fullName, phone });
+    setLoading(submitBtn, false);
+
+    if (error) {
+      if (error.code === CARD_DUPLICATE) {
+        showToast(`Card ${cardNo} already exists`, "error", "Use a different card number");
+      } else {
+        showToast("Couldn't save card", "error", "Please try again");
+      }
+      return;
+    }
+    window.location.href = "dashboard.html";
+  });
+</script>
+</body>
+</html>

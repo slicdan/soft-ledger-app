@@ -38,18 +38,22 @@
     </div>
 
     <!-- Filter pills -->
-    <div class="mt-4 flex items-center gap-2">
+    <div class="mt-4 -mx-5 px-5 flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <button data-filter="all"
-        class="px-4 py-1.5 rounded-full text-sm font-medium sl-btn-primary text-white flex items-center gap-1.5">
+        class="shrink-0 px-3 py-1.5 rounded-full text-sm font-medium sl-btn-primary text-white flex items-center gap-1.5">
         All <span id="count-all" class="text-[11px] font-medium px-2 py-0 rounded-full bg-white/20">0</span>
       </button>
       <button data-filter="owing"
-        class="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
+        class="shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
         Owing <span id="count-owing" class="text-[11px] font-medium px-2 py-0 rounded-full bg-slate-100 text-slate-500">0</span>
       </button>
       <button data-filter="trusted"
-        class="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
+        class="shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
         Trusted <span id="count-trusted" class="text-[11px] font-medium px-2 py-0 rounded-full bg-slate-100 text-slate-500">0</span>
+      </button>
+      <button data-filter="cards"
+        class="shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
+        Cards <span id="count-cards" class="text-[11px] font-medium px-2 py-0 rounded-full bg-slate-100 text-slate-500">0</span>
       </button>
     </div>
 
@@ -115,6 +119,8 @@
     all: { match: () => true, emptyText: "No customers yet. Tap + to add one." },
     owing: { match: (c) => c.balance > 0, emptyText: "No customers owing right now." },
     trusted: { match: (c) => !(c.balance > 0), emptyText: "No trusted customers yet." },
+    // No card data exists yet; the tab is a placeholder until cards are built.
+    cards: { match: () => false, emptyText: "No cards yet." },
   };
 
   for (const [key, f] of Object.entries(filters)) {
@@ -189,6 +195,7 @@
     pill.addEventListener("click", () => {
       activeFilter = pill.dataset.filter;
       setActivePill(activeFilter);
+      pill.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
       renderCustomers();
     });
   });
