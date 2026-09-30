@@ -51,9 +51,9 @@
         class="shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
         Trusted <span id="count-trusted" class="text-[11px] font-medium px-2 py-0 rounded-full bg-slate-100 text-slate-500">0</span>
       </button>
-      <button data-filter="cards"
+      <button data-filter="tags"
         class="shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 flex items-center gap-1.5">
-        Cards <span id="count-cards" class="text-[11px] font-medium px-2 py-0 rounded-full bg-slate-100 text-slate-500">0</span>
+        Tags <span id="count-tags" class="text-[11px] font-medium px-2 py-0 rounded-full bg-slate-100 text-slate-500">0</span>
       </button>
     </div>
 
@@ -119,8 +119,8 @@
     all: { match: () => true, emptyText: "No customers yet. Tap + to add one." },
     owing: { match: (c) => c.balance > 0, emptyText: "No customers owing right now." },
     trusted: { match: (c) => !(c.balance > 0), emptyText: "No trusted customers yet." },
-    // No card data exists yet; the tab is a placeholder until cards are built.
-    cards: { match: () => false, emptyText: "No cards yet." },
+    // No tag data exists yet; the tab is a placeholder until tags are built.
+    tags: { match: () => false, emptyText: "No tags yet." },
   };
 
   for (const [key, f] of Object.entries(filters)) {

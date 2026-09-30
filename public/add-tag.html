@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="js/theme.js"></script>
+<title>Add Tag — SoftLedger</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen bg-white">
+
+  <div class="mx-auto lg:max-w-sm px-5 pt-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html" class="text-slate-900" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <h1 class="text-lg font-bold text-slate-900">Add Tag</h1>
+    </div>
+
+    <form id="add-tag-form" class="mt-6 space-y-5" novalidate>
+
+      <div>
+        <label for="tag-no" class="block text-sm font-semibold text-slate-900 mb-1.5">Tag No. <span class="text-rose-500">*</span></label>
+        <input id="tag-no" type="text" inputmode="numeric" autocomplete="off" maxlength="20" required
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="e.g. 111">
+      </div>
+
+      <div>
+        <label for="full-name" class="block text-sm font-semibold text-slate-900 mb-1.5">Full Name (optional)</label>
+        <input id="full-name" type="text" autocomplete="off"
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="Enter tag holder's name">
+      </div>
+
+      <div>
+        <label for="phone" class="block text-sm font-semibold text-slate-900 mb-1.5">Phone Number (optional)</label>
+        <input id="phone" type="tel" autocomplete="off"
+               class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
+               placeholder="+234 801 234 5678">
+      </div>
+
+      <button type="submit"
+        class="sl-btn-primary w-full text-white font-semibold py-3.5 rounded-full mt-6">
+        Save Tag
+      </button>
+    </form>
+  </div>
+
+<script type="module">
+  import { requireAuth } from "./js/auth.js";
+  import { showToast, setLoading } from "./js/utils.js";
+  import { createTag, TAG_DUPLICATE } from "./js/tags.js";
+
+  await requireAuth();
+
+  const tagNoInput = document.getElementById("tag-no");
+
+  document.getElementById("add-tag-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector("button[type=submit]");
+    const tagNo = tagNoInput.value.trim();
+    const fullName = document.getElementById("full-name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+
+    if (!tagNo) {
+      showToast("Tag number is required");
+      tagNoInput.focus();
+      return;
+    }
+
+    setLoading(submitBtn, true, "Saving…");
+    const { error } = await createTag({ tagNo, fullName, phone });
+    setLoading(submitBtn, false);
+
+    if (error) {
+      if (error.code === TAG_DUPLICATE) {
+        showToast(`Tag ${tagNo} already exists`, "error", "Use a different tag number");
+      } else {
+        showToast("Couldn't save tag", "error", "Please try again");
+      }
+      return;
+    }
+    window.location.href = "dashboard.html";
+  });
+</script>
+</body>
+</html>
