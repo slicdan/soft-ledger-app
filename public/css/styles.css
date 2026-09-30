@@ -492,6 +492,8 @@ body {
 .ob-ico--green  { color: #12A66B; background: #E6F6EE; }
 .ob-ico--violet { color: #6D4AE6; background: #EFEBFD; }
 .ob-ico--amber  { color: #F08A0C; background: #FEF1DE; }
+.ob-ico--pink   { color: #E0457B; background: #FDEBF2; }
+.ob-ico--gray   { color: #8391A7; background: #F0F3F8; }
 .ob-feature h2 {
   margin: 1px 0 0;
   font-size: 15.5px;
@@ -638,3 +640,210 @@ body {
   .ob-check,
   .ob-type-card { transition: none; }
 }
+
+/* =====================================================================
+   Dark theme
+   ---------------------------------------------------------------------
+   Activated by `html.dark` (js/theme.js: stored choice, else system).
+   One token set below; every rule maps an existing Tailwind utility or
+   component class to a token, so pages need no per-screen dark markup.
+   Palette sampled from the dashboard dark reference.
+   ===================================================================== */
+html.dark {
+  --sl-ink: #F8FAFC;
+  --sl-muted: #A8BAD6;
+  --sl-blue-text: #5EA0FF;   /* blue used as text/icon on dark surfaces */
+
+  --d-bg: #0B1119;           /* page */
+  --d-nav: #0C121B;          /* bottom nav */
+  --d-surface: #131C26;      /* cards, tiles, inputs */
+  --d-surface-line: #192330; /* card border */
+  --d-raised: #1D2837;       /* icon wells, chips, menus */
+  --d-line: #1E2935;         /* dividers, hairlines */
+  --d-line-strong: #2A3648;  /* input borders, unselected outlines */
+  --d-nav-line: #15212C;
+
+  --d-tx-1: #F8FAFC;
+  --d-tx-2: #E0E8F4;
+  --d-tx-3: #CBD8EC;
+  --d-tx-4: #B6C6DF;
+  --d-tx-5: #A8BAD6;
+  --d-tx-6: #5F7089;
+}
+
+html.dark body { background-color: var(--d-bg); color: var(--d-tx-1); }
+
+/* Surfaces */
+html.dark .bg-white { background-color: var(--d-surface); }
+html.dark body.bg-white,
+html.dark .sticky.bg-white { background-color: var(--d-bg); }
+html.dark nav.bg-white { background-color: var(--d-nav); }
+html.dark .bg-white.rounded-full { background-color: #fff; } /* toggle knobs */
+html.dark .bg-slate-50 { background-color: var(--d-surface); }
+html.dark .bg-slate-100 { background-color: var(--d-raised); }
+html.dark .bg-slate-200 { background-color: var(--d-line-strong); } /* toggle track (off) */
+html.dark .bg-blue-50 { background-color: var(--d-raised); }
+html.dark .bg-blue-900 { background-color: #193068; }
+html.dark .bg-slate-900\/40 { background-color: rgba(0, 0, 0, 0.6); }
+html.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.15); }
+html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.15); }
+html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.15); }
+html.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.15); }
+html.dark .rounded-2xl.border-slate-100 { background-color: var(--d-surface); }
+
+/* Text */
+html.dark .text-slate-900 { color: var(--d-tx-1); }
+html.dark .text-slate-700 { color: var(--d-tx-2); }
+html.dark .text-slate-600 { color: var(--d-tx-3); }
+html.dark .text-slate-500 { color: var(--d-tx-4); }
+html.dark .text-slate-400 { color: var(--d-tx-5); }
+html.dark .text-slate-300 { color: var(--d-tx-6); }
+html.dark .text-blue-600 { color: var(--sl-blue-text); }
+html.dark .text-rose-500 { color: #FB7185; }
+html.dark .text-red-500,
+html.dark .text-red-600 { color: #F87171; }
+html.dark .text-emerald-600 { color: #34D399; }
+html.dark .text-green-700 { color: #4ADE80; }
+html.dark .placeholder-slate-400::placeholder,
+html.dark .sl-input::placeholder,
+html.dark input::placeholder,
+html.dark textarea::placeholder { color: var(--d-tx-6); opacity: 1; }
+html.dark .sl-link { color: var(--sl-blue-text); }
+html.dark .sl-link:hover { color: #93C0FF; }
+html.dark .border-rose-200 { border-color: rgba(251, 113, 133, 0.35); }
+
+/* Borders and dividers */
+html.dark .border-slate-100 { border-color: var(--d-line); }
+html.dark .border-slate-200 { border-color: var(--d-line-strong); }
+html.dark .border-slate-300 { border-color: var(--d-line-strong); }
+html.dark nav.border-slate-100 { border-color: var(--d-nav-line); }
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--d-line); }
+html.dark .border-red-400 { border-color: #F87171; }
+html.dark .bg-slate-700 { background-color: var(--d-line-strong); }
+
+/* Buttons that carry their own tint keep it; secondary ones follow tokens.
+   Selected chips (border-blue-600 bg-blue-50 text-blue-600) stay legible via
+   the blue border + blue text on the raised well. */
+html.dark .border-blue-600 { border-color: var(--sl-blue-text); }
+html.dark .sl-btn-primary:focus-visible { outline-color: var(--sl-blue-text); }
+html.dark button:disabled,
+html.dark .sl-btn-primary:disabled { opacity: 0.55; }
+
+/* Form fields */
+html.dark :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select) {
+  color: var(--d-tx-1);
+  background-color: var(--d-surface);
+  border-color: var(--d-line-strong);
+} /* :where() keeps specificity at zero so utilities (e.g. border-red-400 errors) still win */
+html.dark .bg-slate-50 { background-color: var(--d-surface); } /* search fields: after generic input rule */
+html.dark .sl-input:focus {
+  border-color: var(--sl-blue-text);
+  box-shadow: 0 0 0 3px rgba(94, 160, 255, 0.22);
+}
+html.dark input:disabled,
+html.dark textarea:disabled { color: var(--d-tx-6); background-color: var(--d-bg); }
+html.dark input[type="checkbox"] { background-color: var(--d-surface); border-color: var(--d-line-strong); }
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--d-tx-1);
+  caret-color: var(--d-tx-1);
+  box-shadow: 0 0 0 1000px var(--d-surface) inset;
+}
+
+/* Dark hero cards (revenue / balance): light theme keeps the navy card,
+   dark theme uses the reference surface + hairline. */
+.sl-hero-card { background: #0B1220; }
+html.dark .sl-hero-card {
+  background: var(--d-surface);
+  border: 1px solid var(--d-surface-line);
+}
+
+/* Dashboard stat tiles: bordered grid in light, separate surface tiles in dark. */
+html.dark .sl-stat-grid {
+  gap: 10px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+}
+html.dark .sl-stat {
+  background: var(--d-surface);
+  border: 1px solid var(--d-surface-line);
+  border-radius: 16px;
+}
+
+/* Default toast pill */
+html.dark #sl-toast.bg-slate-900 {
+  color: var(--d-tx-1);
+  background-color: var(--d-raised);
+  border: 1px solid var(--d-line-strong);
+}
+
+/* Card toasts */
+html.dark .sl-toast-card { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+html.dark .sl-toast-success {
+  color: var(--d-tx-2);
+  background: #10261C;
+  border-color: #1D4530;
+}
+html.dark .sl-toast-error {
+  color: var(--d-tx-2);
+  background: var(--d-surface);
+  border-color: var(--d-line-strong);
+}
+html.dark .sl-toast-detail { color: var(--d-tx-5); }
+html.dark .sl-toast-close { color: var(--d-tx-5); }
+html.dark .sl-toast-close:hover { color: var(--d-tx-1); }
+
+/* Custom select (js/custom-select.js) */
+html.dark .sl-select-trigger {
+  color: var(--d-tx-1);
+  background: var(--d-surface);
+  border-color: var(--d-line-strong);
+}
+html.dark .sl-select-trigger:focus-visible,
+html.dark .sl-select.is-open .sl-select-trigger {
+  border-color: var(--sl-blue-text);
+  box-shadow: 0 0 0 3px rgba(94, 160, 255, 0.22);
+}
+html.dark .sl-select-label.is-placeholder { color: var(--d-tx-6); }
+html.dark .sl-select-panel {
+  background: var(--d-raised);
+  border-color: var(--d-line-strong);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+html.dark .sl-select-search { background: var(--d-surface); }
+html.dark .sl-select-search input::placeholder { color: var(--d-tx-6); }
+html.dark .sl-select-option:hover { background: rgba(255, 255, 255, 0.05); }
+html.dark .sl-select-option.is-selected { background: rgba(94, 160, 255, 0.14); }
+html.dark .sl-select-avatar { color: var(--d-tx-3); background: var(--d-line-strong); }
+html.dark .sl-select-option.is-selected .sl-select-avatar { color: #fff; background: var(--sl-blue); }
+html.dark .sl-select-radio { border-color: var(--d-tx-6); }
+html.dark .sl-select-option.is-selected .sl-select-radio { border-color: var(--sl-blue-text); }
+html.dark .sl-select-option.is-selected .sl-select-radio::after { background: var(--sl-blue-text); }
+
+/* Onboarding (index.html) */
+html.dark .ob-body { background: linear-gradient(180deg, #0B1119 0%, #0D141D 100%); }
+html.dark .ob-word span { color: var(--d-tx-1); }
+html.dark .ob-word b { color: var(--sl-blue-text); }
+html.dark .ob-login { color: var(--sl-blue-text); }
+html.dark .ob-back:focus-visible,
+html.dark .ob-login:focus-visible { outline-color: var(--sl-blue-text); }
+html.dark .ob-hero { content: url("../assets/onboarding-welcome-dark.webp"); }
+html.dark .ob-eyebrow { color: var(--d-tx-5); }
+html.dark .ob-ico--blue   { color: #6BA8FF; background: rgba(59, 130, 246, 0.16); }
+html.dark .ob-ico--green  { color: #34D399; background: rgba(16, 185, 129, 0.16); }
+html.dark .ob-ico--violet { color: #A78BFA; background: rgba(139, 92, 246, 0.18); }
+html.dark .ob-ico--amber  { color: #FBBF24; background: rgba(245, 158, 11, 0.16); }
+html.dark .ob-ico--pink   { color: #F472B6; background: rgba(236, 72, 153, 0.16); }
+html.dark .ob-ico--gray   { color: #A8BAD6; background: rgba(148, 163, 184, 0.14); }
+html.dark .ob-type-card { background: var(--d-surface); border-color: var(--d-surface-line); }
+html.dark .ob-type input:checked + .ob-type-card {
+  background: rgba(94, 160, 255, 0.10);
+  border-color: var(--sl-blue-text);
+  box-shadow: 0 0 0 3px rgba(94, 160, 255, 0.14);
+}
+html.dark .ob-type input:checked + .ob-type-card .ob-type-name { color: #9CC4FF; }
+html.dark .ob-type input:focus-visible + .ob-type-card { outline-color: var(--sl-blue-text); }
+html.dark .ob-dot { background: var(--d-line-strong); }
+html.dark .ob-dot.is-active { background: var(--sl-blue); }
+html.dark .ob-cta { box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35); }

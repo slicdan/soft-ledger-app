@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="js/theme.js"></script>
 <title>Store Settings — SoftLedger</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,9 +155,13 @@
   document.getElementById("backup-toggle").addEventListener("change", (e) => {
     showToast(e.target.checked ? "Auto backup enabled" : "Auto backup disabled");
   });
-  document.getElementById("dark-mode-toggle").addEventListener("click", (e) => {
-    e.preventDefault();
-    showToast("Coming Soon");
+  const darkToggle = document.getElementById("dark-mode-toggle");
+  darkToggle.checked = window.slTheme.isDark();
+  darkToggle.addEventListener("change", (e) => {
+    window.slTheme.set(e.target.checked ? "dark" : "light");
+  });
+  document.addEventListener("sl-theme-change", () => {
+    darkToggle.checked = window.slTheme.isDark();
   });
 
   document.querySelectorAll("[data-toast]").forEach((el) => {
