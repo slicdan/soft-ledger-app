@@ -32,3 +32,11 @@ export async function countTags() {
     .select("id", { count: "exact", head: true });
   return { count: count ?? 0, error };
 }
+
+// All saved tags, newest first. Backs the Tags tab on customers.html.
+export async function listTags() {
+  return supabase
+    .from("tags")
+    .select("id, tag_no, full_name, phone, created_at")
+    .order("created_at", { ascending: false });
+}

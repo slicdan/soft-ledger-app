@@ -21,7 +21,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-bold text-slate-900">Customers</h1>
-      <a href="add-customer.html"
+      <a id="add-link" href="add-customer.html"
         class="sl-btn-primary w-9 h-9 rounded-full text-white flex items-center justify-center">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </a>
@@ -99,6 +99,7 @@
   import { requireAuth } from "./js/auth.js";
   import { showToast, formatNaira } from "./js/utils.js";
   import { listCustomersWithBalances } from "./js/customers.js";
+  import { listTags } from "./js/tags.js";
 
   await requireAuth();
 
@@ -109,7 +110,11 @@
     });
   });
 
-  const { data: customers, error } = await listCustomersWithBalances();
+  const [{ data: customers, error }, { data: tagRows, error: tagsError }] = await Promise.all([
+    listCustomersWithBalances(),
+    listTags(),
+  ]);
+  const allTags = !tagsError && tagRows ? tagRows : [];
   const list = document.getElementById("customer-list");
   const empty = document.getElementById("customer-list-empty");
   const all = !error && customers ? customers : [];
@@ -119,13 +124,16 @@
     all: { match: () => true, emptyText: "No customers yet. Tap + to add one." },
     owing: { match: (c) => c.balance > 0, emptyText: "No customers owing right now." },
     trusted: { match: (c) => !(c.balance > 0), emptyText: "No trusted customers yet." },
-    // No tag data exists yet; the tab is a placeholder until tags are built.
-    tags: { match: () => false, emptyText: "No tags yet." },
+    // Tags are a separate entity (not a customer subset): this tab swaps the
+    // list source but reuses the same row anatomy.
+    tags: { emptyText: "No tags yet. Tap + to add one.", addHref: "add-tag.html" },
   };
 
   for (const [key, f] of Object.entries(filters)) {
+    if (key === "tags") continue;
     document.getElementById(`count-${key}`).textContent = all.filter(f.match).length;
   }
+  document.getElementById("count-tags").textContent = allTags.length;
 
   let activeFilter = "all";
   let query = "";
@@ -142,7 +150,45 @@
     return amountStr.includes(numeric);
   }
 
+  function matchesTagSearch(t, q) {
+    if (!q) return true;
+    const needle = q.toLowerCase();
+    return [t.tag_no, t.full_name, t.phone].some((v) => v && v.toLowerCase().includes(needle));
+  }
+
+  function renderTags() {
+    const f = filters.tags;
+    const rows = allTags.filter((t) => matchesTagSearch(t, query));
+    if (!rows.length) {
+      list.innerHTML = "";
+      empty.textContent = query && allTags.length ? `No tags match "${query}".` : f.emptyText;
+      empty.classList.remove("hidden");
+      return;
+    }
+    empty.classList.add("hidden");
+    list.innerHTML = rows.map((t) => {
+      const label = t.tag_no.length > 4 ? t.tag_no.slice(0, 4) : t.tag_no;
+      const name = t.full_name
+        ? `<p class="text-sm font-medium text-slate-900">${t.full_name}</p>`
+        : `<p class="text-sm font-medium text-slate-400">No name</p>`;
+      return `
+        <div class="w-full flex items-center gap-3 py-3.5 text-left">
+          <span class="w-11 h-11 shrink-0 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-semibold">${label}</span>
+          <div class="flex-1 min-w-0">
+            ${name}
+            <p class="text-xs text-slate-400 mt-0.5">${t.phone || "No phone"}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-semibold text-slate-900">Tag ${t.tag_no}</p>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
   function renderCustomers() {
+    document.getElementById("add-link").href = activeFilter === "tags" ? filters.tags.addHref : "add-customer.html";
+    document.getElementById("search").placeholder = activeFilter === "tags" ? "Search tags..." : "Search customers...";
+    if (activeFilter === "tags") return renderTags();
     const f = filters[activeFilter];
     const rows = all.filter(f.match).filter((c) => matchesSearch(c, query));
     if (!rows.length) {
