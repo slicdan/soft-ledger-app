@@ -23,3 +23,12 @@ export async function createCard({ cardNo, fullName, phone }) {
     .select()
     .single();
 }
+
+// Number of saved cards, for the dashboard's Cards tile. Head request:
+// returns the count only, no rows.
+export async function countCards() {
+  const { count, error } = await supabase
+    .from("cards")
+    .select("id", { count: "exact", head: true });
+  return { count: count ?? 0, error };
+}

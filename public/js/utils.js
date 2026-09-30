@@ -24,6 +24,19 @@ export function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+// Shrinks a group of elements together (one shared font-size, never below
+// minPx) until every one fits on a single line inside its box. Shared size
+// keeps sibling tiles visually even when only one has a long value.
+export function fitTextGroup(els, minPx = 11) {
+  if (!els.length) return;
+  els.forEach((el) => { el.style.fontSize = ""; });
+  let size = Math.max(...els.map((el) => parseFloat(getComputedStyle(el).fontSize)));
+  while (els.some((el) => el.scrollWidth > el.clientWidth) && size > minPx) {
+    size -= 0.5;
+    els.forEach((el) => { el.style.fontSize = `${size}px`; });
+  }
+}
+
 export function setLoading(buttonEl, loading, loadingText = "Please wait…") {
   if (loading) {
     buttonEl.dataset.originalText = buttonEl.textContent;
