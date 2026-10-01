@@ -11,10 +11,46 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<style>
+  /* Fixed, static Reports screen: one viewport tall, no page-level scroll.
+     Spacing/sizing scale with viewport height; the trend chart absorbs the
+     remaining height. Expanded "View all" scrolls inside its own list. */
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  .rep-root { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .rep-main {
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+    width: 100%; margin: 0 auto;
+    padding: clamp(10px, 2.4dvh, 24px) 20px 0;
+    gap: clamp(8px, 2dvh, 20px);
+    overflow: hidden;
+  }
+  .rep-main > * { flex: 0 0 auto; min-width: 0; }
+  #report-content { flex: 1 1 auto !important; min-height: 0; display: flex; flex-direction: column; gap: clamp(8px, 2dvh, 20px); }
+  #report-content > * { flex: 0 0 auto; min-width: 0; margin-top: 0 !important; }
+  .rep-overview-grid { margin-top: clamp(4px, 0.8dvh, 10px) !important; }
+  .rep-stat { padding: clamp(8px, 1.8dvh, 16px) 16px; }
+  .rep-trend { flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; padding: clamp(10px, 1.8dvh, 16px) 16px; }
+  .rep-chart { flex: 1 1 0; min-height: 0; margin-top: clamp(4px, 1dvh, 12px) !important; height: auto !important; position: relative; }
+  .rep-chart-inner { position: absolute; inset: 0; }
+  .rep-top-head { display: flex; align-items: center; justify-content: space-between; }
+  #top-customers { margin-top: 0 !important; overflow-y: auto; overscroll-behavior: contain; }
+  .rep-top-row { height: clamp(38px, 6.2dvh, 58px); padding-block: 0 !important; }
+  .rep-avatar { width: clamp(28px, 4.6dvh, 36px); height: clamp(28px, 4.6dvh, 36px); }
+  .rep-nav { flex: 0 0 auto; }
+  @media (min-width: 1024px) { .rep-main { max-width: 24rem; } }
+  @media (max-height: 620px) {
+    .rep-main { gap: 6px; padding-top: 8px; }
+    #report-content { gap: 6px; }
+    .rep-stat { padding: 6px 12px; }
+    .rep-trend { padding: 8px 12px; }
+    .rep-top-row { height: 36px; }
+  }
+</style>
 </head>
-<body class="min-h-screen bg-white">
+<body class="bg-white">
 
-  <div class="mx-auto lg:max-w-sm px-5 pt-6 pb-28">
+  <div class="rep-root">
+  <div class="rep-main">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-3">
@@ -48,14 +84,14 @@
     <div id="report-content" class="transition-opacity duration-150" aria-busy="false">
 
     <!-- Overview -->
-    <h2 class="mt-6 text-sm font-bold text-slate-900">Overview</h2>
-    <div class="mt-3 grid grid-cols-2 gap-3">
-      <div class="rounded-xl border border-slate-100 p-4">
+    <h2 class="text-sm font-bold text-slate-900">Overview</h2>
+    <div class="rep-overview-grid grid grid-cols-2 gap-3">
+      <div class="rounded-xl border border-slate-100 rep-stat">
         <p class="text-xs text-slate-400">Total Revenue</p>
         <p id="total-revenue" class="text-lg font-bold text-slate-900 mt-1.5">—</p>
         <span id="revenue-delta" class="flex items-center gap-0.5 text-xs font-semibold mt-1 min-h-[1rem]"></span>
       </div>
-      <div class="rounded-xl border border-slate-100 p-4">
+      <div class="rounded-xl border border-slate-100 rep-stat">
         <p class="text-xs text-slate-400">Total Charges</p>
         <p id="total-charges" class="text-lg font-bold text-slate-900 mt-1.5">—</p>
         <span id="charges-delta" class="flex items-center gap-0.5 text-xs font-semibold mt-1 min-h-[1rem]"></span>
@@ -63,28 +99,28 @@
     </div>
 
     <!-- Revenue Trend -->
-    <div class="mt-6 rounded-2xl border border-slate-100 p-4">
+    <div class="rep-trend rounded-2xl border border-slate-100">
       <h2 class="text-sm font-bold text-slate-900">Revenue Trend</h2>
-      <div class="mt-3 relative" style="height:160px">
-        <canvas id="revenue-trend-chart" role="img" aria-label="Revenue trend"></canvas>
+      <div class="rep-chart">
+        <div class="rep-chart-inner"><canvas id="revenue-trend-chart" role="img" aria-label="Revenue trend"></canvas></div>
         <p id="trend-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 pointer-events-none">No payments in this period</p>
       </div>
     </div>
 
     <!-- Top Customers -->
-    <div class="mt-6 flex items-center justify-between">
+    <div class="rep-top-head">
       <h2 class="text-sm font-bold text-slate-900">Top Customers</h2>
       <button id="top-toggle" type="button" class="hidden sl-link text-sm font-medium">View all</button>
     </div>
     <div id="top-customers" class="mt-2"></div>
-    <p id="top-empty" class="hidden mt-3 text-sm text-slate-400 text-center">No payments in this period.</p>
+    <p id="top-empty" class="hidden text-sm text-slate-400 text-center">No payments in this period.</p>
 
     </div>
 
   </div>
 
   <!-- Bottom nav -->
-  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+  <nav class="rep-nav bg-white border-t border-slate-100" style="padding-bottom:env(safe-area-inset-bottom,0px)">
     <div class="mx-auto lg:max-w-sm grid grid-cols-4">
       <a href="dashboard.html" class="flex flex-col items-center gap-1 py-2.5 text-slate-400">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -113,6 +149,7 @@
       </a>
     </div>
   </nav>
+  </div>
 
 <script type="module">
   import { requireAuth } from "./js/auth.js";
@@ -304,16 +341,22 @@
     topToggle.textContent = topExpanded ? "Show less" : "View all";
     const rows = topExpanded ? topRows : topRows.slice(0, TOP_PREVIEW);
     topList.innerHTML = rows.map((row, i) => `
-      <a href="customer-detail.html?id=${encodeURIComponent(row.id)}" class="w-full flex items-center gap-3 py-2.5 text-left">
-        <span class="w-9 h-9 shrink-0 rounded-full text-white flex items-center justify-center text-xs font-semibold" style="background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${escapeHtml(row.name.charAt(0).toUpperCase())}</span>
+      <a href="customer-detail.html?id=${encodeURIComponent(row.id)}" class="rep-top-row w-full flex items-center gap-3 text-left">
+        <span class="rep-avatar shrink-0 rounded-full text-white flex items-center justify-center text-xs font-semibold" style="background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${escapeHtml(row.name.charAt(0).toUpperCase())}</span>
         <span class="flex-1 min-w-0 truncate text-sm font-medium text-slate-900">${escapeHtml(row.name)}</span>
         <span class="text-sm font-semibold text-slate-900">${formatNaira(row.total)}</span>
       </a>`).join("");
   }
-  topToggle.addEventListener("click", () => {
-    topExpanded = !topExpanded;
+  // Expanding keeps the layout fixed: the list is locked to its collapsed
+  // height and scrolls inside itself; the page never scrolls.
+  function setTopExpanded(expanded) {
+    if (expanded) topList.style.height = `${topList.offsetHeight}px`;
+    else { topList.style.height = ""; topList.scrollTop = 0; }
+    topExpanded = expanded;
     renderTopCustomers();
-  });
+  }
+  topToggle.addEventListener("click", () => setTopExpanded(!topExpanded));
+  window.addEventListener("resize", () => { if (topExpanded) setTopExpanded(false); });
 
   // ---- load + render ----
   const content = document.getElementById("report-content");
@@ -390,8 +433,7 @@
     topRows = [...byCustomer.entries()]
       .map(([id, total]) => ({ id, total, name: names.get(id) || "Unknown" }))
       .sort((a, b) => b.total - a.total);
-    topExpanded = false;
-    renderTopCustomers();
+    setTopExpanded(false);
   }
 
   markActiveOption();
