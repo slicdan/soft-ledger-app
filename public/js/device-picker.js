@@ -22,7 +22,9 @@ const DEVICES = [
   {
     value: "Power Bank",
     quantity: true,
-    icon: `<rect x="6" y="7" width="12" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><line x1="12" y1="11" x2="12" y2="15"/>`,
+    // Filled 256-grid icon (battery-charging-vertical); others are 24-grid strokes.
+    filled: true,
+    icon: `<path d="M150.81,131.79a8,8,0,0,1,.35,7.79l-16,32a8,8,0,0,1-14.32-7.16L131.06,144H112a8,8,0,0,1-7.16-11.58l16-32a8,8,0,1,1,14.32,7.16L124.94,128H144A8,8,0,0,1,150.81,131.79ZM96,16h64a8,8,0,0,0,0-16H96a8,8,0,0,0,0,16ZM200,56V224a24,24,0,0,1-24,24H80a24,24,0,0,1-24-24V56A24,24,0,0,1,80,32h96A24,24,0,0,1,200,56Zm-16,0a8,8,0,0,0-8-8H80a8,8,0,0,0-8,8V224a8,8,0,0,0,8,8h96a8,8,0,0,0,8-8Z"/>`,
   },
   {
     value: "Laptop",
@@ -38,9 +40,16 @@ const DEVICES = [
 
 // Read-only helpers for screens that display a saved device (e.g. the
 // transaction detail card): the same icons, and "Phone x2"-style labels.
+function iconSvg(d, size) {
+  if (d.filled) {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 256 256" fill="currentColor">${d.icon}</svg>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d.icon}</svg>`;
+}
+
 export function deviceIcon(value, size = 20) {
   const d = DEVICES.find((x) => x.value === value) || DEVICES[DEVICES.length - 1];
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d.icon}</svg>`;
+  return iconSvg(d, size);
 }
 
 export function deviceLabel(value, quantity = 1) {
@@ -64,7 +73,7 @@ export function createDevicePicker(container) {
         <div class="device-card relative" data-value="${d.value}">
           <button type="button" data-value="${d.value}" aria-pressed="false"
             class="device-btn w-full flex flex-col items-center gap-1.5 py-3 rounded-xl">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d.icon}</svg>
+            ${iconSvg(d, 20)}
             <span class="text-xs font-medium">${d.value}</span>
           </button>
           ${d.quantity ? `
