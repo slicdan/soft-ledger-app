@@ -121,7 +121,7 @@
 <script type="module">
   import { requireAuth } from "./js/auth.js";
   import { createSelect } from "./js/custom-select.js";
-  import { createDevicePicker } from "./js/device-picker.js";
+  import { createDevicePicker } from "./js/device-picker.js?v=4";
   import { showToast, setLoading, formatNaira } from "./js/utils.js";
   import { listCustomersBasic, getCustomerBalance } from "./js/customers.js";
   import { listTags } from "./js/tags.js";
@@ -138,7 +138,29 @@
     placeholder: "Loading tags…",
     searchPlaceholder: "Search tag...",
   });
-  const devicePicker = createDevicePicker(document.getElementById("device-picker"));
+  // Predefined unit costs (₦) per device. Only Phone is priced for now;
+  // devices without an entry are never auto-priced.
+  const UNIT_PRICES = { Phone: 100 };
+
+  const amountEl = document.getElementById("amount");
+  let amountAutoFilled = false; // true while the Amount holds a computed value
+  amountEl.addEventListener("input", () => { amountAutoFilled = false; });
+
+  // Tag payments with a priced device: Amount = quantity × unit cost, kept in
+  // sync on every quantity change. Unpriced device / no device / Customer
+  // mode: clear the Amount only if we put it there (never a typed value).
+  function syncAmount() {
+    const price = recipient === "tag" ? UNIT_PRICES[devicePicker.value] : undefined;
+    if (price !== undefined && devicePicker.quantity > 0) {
+      amountEl.value = String(price * devicePicker.quantity);
+      amountAutoFilled = true;
+    } else if (amountAutoFilled) {
+      amountEl.value = "";
+      amountAutoFilled = false;
+    }
+  }
+
+  const devicePicker = createDevicePicker(document.getElementById("device-picker"), { onChange: syncAmount });
   const owesLabel = document.getElementById("owes-label");
 
   // Recipient type drives which picker shows; the other one stays mounted
@@ -160,6 +182,7 @@
     document.getElementById("tag-field").classList.toggle("hidden", next !== "tag");
     document.getElementById("device-field").classList.toggle("hidden", next !== "tag");
     if (next === "customer") updateOwesLabel();
+    syncAmount();
   }
   recipientBtns.forEach((b) => b.addEventListener("click", () => setRecipient(b.dataset.value)));
 

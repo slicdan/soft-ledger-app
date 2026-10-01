@@ -9,7 +9,8 @@
 //   - Tapping a different card switches the selection (its quantity starts
 //     at 1, the previous card is cleared).
 //
-//   const picker = createDevicePicker(containerEl);
+//   const picker = createDevicePicker(containerEl, { onChange });
+//   onChange()        // optional; fires after every user tap (select/＋/×)
 //   picker.value      // "Phone" | "Power Bank" | "Laptop" | "Other" | "" (none)
 //   picker.quantity   // 1+ when selected, 0 when none
 
@@ -62,7 +63,7 @@ const IDLE = ["border", "border-slate-200", "text-slate-500"];
 
 const CLOSE = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`;
 
-export function createDevicePicker(container) {
+export function createDevicePicker(container, { onChange } = {}) {
   let selected = DEVICES[0].value; // Phone preselected, as before
   let quantity = 1;
 
@@ -118,6 +119,7 @@ export function createDevicePicker(container) {
         quantity = 1;
       }
       render();
+      onChange?.();
     });
 
     const minus = card.querySelector(".device-minus");
@@ -129,6 +131,7 @@ export function createDevicePicker(container) {
           quantity = 0;
         }
         render();
+        onChange?.();
       });
     }
   }

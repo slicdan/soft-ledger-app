@@ -78,7 +78,7 @@
 <script type="module">
   import { requireAuth } from "./js/auth.js";
   import { createSelect } from "./js/custom-select.js";
-  import { createDevicePicker } from "./js/device-picker.js";
+  import { createDevicePicker } from "./js/device-picker.js?v=4";
   import { showToast, setLoading } from "./js/utils.js";
   import { listCustomersBasic } from "./js/customers.js";
   import { createCharge } from "./js/charges.js";
@@ -100,7 +100,29 @@
     );
   }
 
-  const devicePicker = createDevicePicker(document.getElementById("device-picker"));
+  // Predefined unit costs (₦) per device. Only Phone is priced for now;
+  // devices without an entry are never auto-priced.
+  const UNIT_PRICES = { Phone: 100 };
+
+  const amountEl = document.getElementById("amount");
+  let amountAutoFilled = false; // true while the Amount holds a computed value
+  amountEl.addEventListener("input", () => { amountAutoFilled = false; });
+
+  // Priced device: Amount = quantity × unit cost, kept in sync on every
+  // quantity change. Unpriced device / no device: clear the Amount only if we
+  // put it there (never a typed value).
+  function syncAmount() {
+    const price = UNIT_PRICES[devicePicker.value];
+    if (price !== undefined && devicePicker.quantity > 0) {
+      amountEl.value = String(price * devicePicker.quantity);
+      amountAutoFilled = true;
+    } else if (amountAutoFilled) {
+      amountEl.value = "";
+      amountAutoFilled = false;
+    }
+  }
+
+  const devicePicker = createDevicePicker(document.getElementById("device-picker"), { onChange: syncAmount });
 
   let selectedDuration = "2h";
   document.querySelectorAll(".duration-btn").forEach((btn) => {
