@@ -58,6 +58,13 @@ softledger/
 - **"Charging Now" dashboard stat.** Removed. No screen anywhere has a start/stop-charging control, so there's no session concept to count — adding one would be inventing a feature, not wiring an existing one.
 - **Dashboard revenue mini chart.** Still inert. The reports page now has the per-day aggregation it would need, but it isn't wired here.
 
+## Payment devices
+
+- A payment holds 1..n devices in `payment_items (payment_id, device, quantity)`, unique per `(payment_id, device)`, cascade-deleted with the payment, RLS by `user_id`. New device types need no schema change.
+- `payments.device` / `payments.quantity` are legacy: no longer written, kept for existing rows. Migration `20261001150000_payment_items.sql` backfills them into `payment_items`; `getPayment()` also falls back to them when a payment has no items.
+- `createPayment({ items: [{ device, quantity }] })` inserts the payment, then its items; if the items insert fails the payment is deleted again.
+- Charges are unchanged (single `device` + `quantity`).
+
 ## Reports definitions
 
 - **Revenue** = sum of `payments.amount` received in the period (cash collected). The dashboard's "Total Revenue (Today)" still sums charges billed, so the two intentionally differ. **Total Charges** = number of charges billed in the period.

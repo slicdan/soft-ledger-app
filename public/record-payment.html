@@ -121,7 +121,7 @@
 <script type="module">
   import { requireAuth } from "./js/auth.js";
   import { createSelect } from "./js/custom-select.js";
-  import { createDevicePicker } from "./js/device-picker.js?v=4";
+  import { createDevicePicker } from "./js/device-picker.js?v=5";
   import { showToast, setLoading, formatNaira } from "./js/utils.js";
   import { listCustomersBasic, getCustomerBalance } from "./js/customers.js";
   import { listTags } from "./js/tags.js";
@@ -146,13 +146,15 @@
   let amountAutoFilled = false; // true while the Amount holds a computed value
   amountEl.addEventListener("input", () => { amountAutoFilled = false; });
 
-  // Tag payments with a priced device: Amount = quantity × unit cost, kept in
-  // sync on every quantity change. Unpriced device / no device / Customer
-  // mode: clear the Amount only if we put it there (never a typed value).
+  // Tag payments where every selected device is priced: Amount = Σ quantity ×
+  // unit cost, kept in sync on every change. Any unpriced device / no device /
+  // Customer mode: clear the Amount only if we put it there (never a typed
+  // value).
   function syncAmount() {
-    const price = recipient === "tag" ? UNIT_PRICES[devicePicker.value] : undefined;
-    if (price !== undefined && devicePicker.quantity > 0) {
-      amountEl.value = String(price * devicePicker.quantity);
+    const items = recipient === "tag" ? devicePicker.items : [];
+    const allPriced = items.length > 0 && items.every((it) => UNIT_PRICES[it.device] !== undefined);
+    if (allPriced) {
+      amountEl.value = String(items.reduce((sum, it) => sum + UNIT_PRICES[it.device] * it.quantity, 0));
       amountAutoFilled = true;
     } else if (amountAutoFilled) {
       amountEl.value = "";
@@ -160,7 +162,7 @@
     }
   }
 
-  const devicePicker = createDevicePicker(document.getElementById("device-picker"), { onChange: syncAmount });
+  const devicePicker = createDevicePicker(document.getElementById("device-picker"), { onChange: syncAmount, multi: true });
   const owesLabel = document.getElementById("owes-label");
 
   // Recipient type drives which picker shows; the other one stays mounted
@@ -255,7 +257,7 @@
       showToast("Choose a tag first");
       return;
     }
-    if (recipient === "tag" && !devicePicker.value) {
+    if (recipient === "tag" && !devicePicker.items.length) {
       showToast("Choose a device first");
       return;
     }
@@ -264,8 +266,7 @@
     const { error } = await createPayment({
       customerId,
       tagId,
-      device: recipient === "tag" ? devicePicker.value : undefined,
-      quantity: recipient === "tag" ? devicePicker.quantity : undefined,
+      items: recipient === "tag" ? devicePicker.items : [],
       amount,
       method: selectedMethod,
       notes,

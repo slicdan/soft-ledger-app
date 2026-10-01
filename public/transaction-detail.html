@@ -38,6 +38,7 @@
               <p id="device-summary-amount" class="text-blue-300 text-sm font-medium mt-0.5"></p>
             </div>
           </div>
+          <div id="device-list" class="hidden mt-3 mb-2 space-y-3"></div>
           <p id="amount-display" class="text-white text-2xl font-bold mt-1"></p>
           <a id="customer-link" href="#" class="inline-block mt-3 text-sm text-blue-300 font-medium"></a>
           <p id="created-at-display" class="text-slate-500 text-xs mt-1"></p>
@@ -166,7 +167,7 @@
   import { getCharge, updateCharge, deleteCharge } from "./js/charges.js";
   import { getPayment, updatePayment, deletePayment } from "./js/payments.js";
   import { getTag } from "./js/tags.js";
-  import { deviceIcon, deviceLabel } from "./js/device-picker.js?v=4";
+  import { deviceIcon, deviceLabel, sortDeviceItems } from "./js/device-picker.js?v=5";
 
   await requireAuth();
 
@@ -198,14 +199,31 @@
   document.getElementById("type-label").textContent = isCharge ? "Charge" : "Payment received";
   document.getElementById("amount-display").textContent = formatNaira(record.amount);
 
-  // Device summary row (charges and tag payments): "Phone x2" + amount.
-  if (record.device) {
-    document.getElementById("device-summary-icon").innerHTML = deviceIcon(record.device, 28);
-    document.getElementById("device-summary-title").textContent = deviceLabel(record.device, record.quantity ?? 1);
+  // Device summary (charges and tag payments). A charge has one device
+  // (device/quantity columns); a payment has 1..n items. One device keeps the
+  // original "Phone x2" + amount row; several devices list one row each
+  // ("Phone x2", "Laptop") with the total amount on the line below.
+  const deviceItems = isCharge
+    ? (record.device ? [{ device: record.device, quantity: record.quantity ?? 1 }] : [])
+    : sortDeviceItems(record.items);
+  const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const deviceRow = (it) => `
+    <div class="flex items-center gap-3">
+      <span class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-white" style="background:rgba(255,255,255,0.12)">${deviceIcon(it.device, 28)}</span>
+      <p class="min-w-0 text-white text-lg font-semibold leading-tight">${esc(deviceLabel(it.device, it.quantity ?? 1))}</p>
+    </div>`;
+  if (deviceItems.length === 1) {
+    const only = deviceItems[0];
+    document.getElementById("device-summary-icon").innerHTML = deviceIcon(only.device, 28);
+    document.getElementById("device-summary-title").textContent = deviceLabel(only.device, only.quantity ?? 1);
     document.getElementById("device-summary-amount").textContent = formatNaira(record.amount);
     document.getElementById("device-summary").classList.remove("hidden");
     // The row carries the amount, so the big amount line is redundant here.
     document.getElementById("amount-display").classList.add("hidden");
+  } else if (deviceItems.length > 1) {
+    const list = document.getElementById("device-list");
+    list.innerHTML = deviceItems.map(deviceRow).join("");
+    list.classList.remove("hidden");
   }
   const customerLink = document.getElementById("customer-link");
   customerLink.textContent = customer?.full_name || (tag ? `Tag ${tag.tag_no}` : "Unknown customer");

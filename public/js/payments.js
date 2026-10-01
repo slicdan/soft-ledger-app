@@ -3,35 +3,72 @@
 
 import { supabase } from "./supabase-client.js";
 
+// Returns the payment row plus `items`: [{ device, quantity }] (display order
+// is the caller's job; see sortDeviceItems). Payments that predate payment_items (or were written by an
+// older client) fall back to their legacy device/quantity columns, so
+// single-device payments render identically either way.
 export async function getPayment(id) {
-  return supabase
+  const { data, error } = await supabase
     .from("payments")
-    .select("*")
+    .select("*, payment_items(device, quantity)")
     .eq("id", id)
     .single();
+  if (error || !data) return { data, error };
+
+  const { payment_items: rows, ...payment } = data;
+  let items = (rows || []).map(({ device, quantity }) => ({ device, quantity }));
+  if (!items.length && payment.device) {
+    items = [{ device: payment.device, quantity: payment.quantity ?? 1 }];
+  }
+  return { data: { ...payment, items }, error: null };
+}
+
+// Merge duplicate device types and drop invalid rows: [{device, quantity}].
+function normalizeItems(items) {
+  const merged = new Map();
+  for (const it of items || []) {
+    const device = String(it?.device || "").trim();
+    const quantity = Math.floor(Number(it?.quantity));
+    if (!device || !(quantity >= 1)) continue;
+    merged.set(device, (merged.get(device) || 0) + quantity);
+  }
+  return [...merged].map(([device, quantity]) => ({ device, quantity }));
 }
 
 // Exactly one recipient: pass customerId OR tagId. Only the provided key is
 // sent, so customer payments keep working before the tag_id migration lands.
-// `device` (Device / Item) and `quantity` are sent only for tag payments;
-// quantity only when above the column default of 1.
-export async function createPayment({ customerId, tagId, device, quantity, amount, method, notes }) {
+// `items` is [{ device, quantity }] (one row per device type) stored in
+// payment_items. Two requests (PostgREST has no multi-table insert); if the
+// items insert fails the payment row is deleted again so no half-saved
+// payment is left behind.
+export async function createPayment({ customerId, tagId, items, amount, method, notes }) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) return { data: null, error: userError };
+  const userId = userData.user.id;
 
-  return supabase
+  const rows = normalizeItems(items);
+
+  const { data: payment, error } = await supabase
     .from("payments")
     .insert({
-      user_id: userData.user.id,
+      user_id: userId,
       ...(tagId ? { tag_id: tagId } : { customer_id: customerId }),
-      ...(device ? { device } : {}),
-      ...(quantity > 1 ? { quantity } : {}),
       amount,
       method,
       notes: notes || null,
     })
     .select()
     .single();
+  if (error || !rows.length) return { data: payment, error };
+
+  const { error: itemsError } = await supabase
+    .from("payment_items")
+    .insert(rows.map((r) => ({ user_id: userId, payment_id: payment.id, ...r })));
+  if (itemsError) {
+    await supabase.from("payments").delete().eq("id", payment.id);
+    return { data: null, error: itemsError };
+  }
+  return { data: { ...payment, items: rows }, error: null };
 }
 
 // fields: any of { amount, method, notes } (column names).

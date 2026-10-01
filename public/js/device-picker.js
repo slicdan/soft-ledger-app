@@ -13,6 +13,12 @@
 //   onChange()        // optional; fires after every user tap (select/＋/×)
 //   picker.value      // "Phone" | "Power Bank" | "Laptop" | "Other" | "" (none)
 //   picker.quantity   // 1+ when selected, 0 when none
+//
+// Multi-select ({ multi: true }, used by record-payment.html): every card is
+// independent. Tapping an unselected card adds it at quantity 1; tapping a
+// selected quantity card adds 1; "×" removes 1 and deselects at 0. "Other"
+// toggles on/off. Nothing starts preselected.
+//   picker.items      // [{ device, quantity }] in card order; [] when none
 
 const DEVICES = [
   {
@@ -58,14 +64,25 @@ export function deviceLabel(value, quantity = 1) {
   return d && d.quantity && quantity > 1 ? `${value} x${quantity}` : value;
 }
 
+// Orders [{ device, quantity }] by picker card order (unknown devices last),
+// so a payment always lists Phone, Power Bank, Laptop, Other consistently.
+export function sortDeviceItems(items) {
+  const rank = (v) => {
+    const i = DEVICES.findIndex((d) => d.value === v);
+    return i === -1 ? DEVICES.length : i;
+  };
+  return [...(items || [])].sort((a, b) => rank(a.device) - rank(b.device));
+}
+
 const ACTIVE = ["border-2", "border-blue-600", "bg-blue-50", "text-blue-600"];
 const IDLE = ["border", "border-slate-200", "text-slate-500"];
 
 const CLOSE = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`;
 
-export function createDevicePicker(container, { onChange } = {}) {
-  let selected = DEVICES[0].value; // Phone preselected, as before
-  let quantity = 1;
+export function createDevicePicker(container, { onChange, multi = false } = {}) {
+  let selected = multi ? "" : DEVICES[0].value; // single mode: Phone preselected, as before
+  let quantity = multi ? 0 : 1;
+  const counts = new Map(); // multi mode: device value -> quantity (>= 1)
 
   container.innerHTML = `
     <p class="text-sm font-semibold text-slate-900 mb-2">Device / Item</p>
@@ -88,7 +105,8 @@ export function createDevicePicker(container, { onChange } = {}) {
 
   function render() {
     for (const card of cards) {
-      const on = card.dataset.value === selected;
+      const on = multi ? counts.has(card.dataset.value) : card.dataset.value === selected;
+      const shown = multi ? counts.get(card.dataset.value) ?? 0 : quantity;
       const btn = card.querySelector(".device-btn");
       btn.setAttribute("aria-pressed", String(on));
       btn.classList.remove(...ACTIVE, ...IDLE);
@@ -101,8 +119,8 @@ export function createDevicePicker(container, { onChange } = {}) {
         minus.classList.toggle("flex", on);
         qty.classList.toggle("hidden", !on);
         qty.classList.toggle("flex", on);
-        qty.textContent = on ? String(quantity) : "";
-        qty.setAttribute("aria-label", on ? `${quantity} selected` : "");
+        qty.textContent = on ? String(shown) : "";
+        qty.setAttribute("aria-label", on ? `${shown} selected` : "");
       }
     }
   }
@@ -112,6 +130,14 @@ export function createDevicePicker(container, { onChange } = {}) {
     const device = DEVICES.find((d) => d.value === value);
 
     card.querySelector(".device-btn").addEventListener("click", () => {
+      if (multi) {
+        if (!counts.has(value)) counts.set(value, 1);
+        else if (device.quantity) counts.set(value, counts.get(value) + 1);
+        else counts.delete(value); // "Other": tap again to deselect
+        render();
+        onChange?.();
+        return;
+      }
       if (selected === value) {
         if (device.quantity) quantity += 1;
       } else {
@@ -125,6 +151,14 @@ export function createDevicePicker(container, { onChange } = {}) {
     const minus = card.querySelector(".device-minus");
     if (minus) {
       minus.addEventListener("click", () => {
+        if (multi) {
+          const next = (counts.get(value) ?? 0) - 1;
+          if (next <= 0) counts.delete(value);
+          else counts.set(value, next);
+          render();
+          onChange?.();
+          return;
+        }
         quantity -= 1;
         if (quantity <= 0) {
           selected = "";
@@ -144,6 +178,11 @@ export function createDevicePicker(container, { onChange } = {}) {
     },
     get quantity() {
       return selected ? quantity : 0;
+    },
+    get items() {
+      return multi
+        ? DEVICES.filter((d) => counts.has(d.value)).map((d) => ({ device: d.value, quantity: counts.get(d.value) }))
+        : selected ? [{ device: selected, quantity }] : [];
     },
   };
 }
