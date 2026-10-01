@@ -4,22 +4,53 @@
 import { supabase } from "./supabase-client.js";
 
 // v_transactions has customer_id but no name column, so feed rows are
-// decorated with `customer_name` from a second customers read. Keeps the
-// { data, error } shape; data rows are view rows + customer_name.
+// decorated with `customer_name` from a second customers read. Payments made
+// to a tag have a null customer_id; their `customer_name` is the tag label
+// ("Tag 111"), resolved via payments.tag_id. Keeps the { data, error } shape;
+// data rows are view rows + customer_name.
 async function withCustomerNames(result) {
   const { data, error } = result;
   if (error || !data || !data.length) return result;
 
-  const ids = [...new Set(data.map((tx) => tx.customer_id))];
-  const { data: customers, error: customersError } = await supabase
-    .from("customers")
-    .select("id, full_name")
-    .in("id", ids);
-  if (customersError) return { data: null, error: customersError };
+  const names = new Map();
 
-  const names = new Map(customers.map((c) => [c.id, c.full_name]));
+  const customerIds = [...new Set(data.map((tx) => tx.customer_id).filter(Boolean))];
+  if (customerIds.length) {
+    const { data: customers, error: customersError } = await supabase
+      .from("customers")
+      .select("id, full_name")
+      .in("id", customerIds);
+    if (customersError) return { data: null, error: customersError };
+    customers.forEach((c) => names.set(c.id, c.full_name));
+  }
+
+  const tagLabels = new Map(); // payment id -> "Tag 111"
+  const tagPaymentIds = data.filter((tx) => !tx.customer_id && tx.type === "payment").map((tx) => tx.id);
+  if (tagPaymentIds.length) {
+    const { data: payRows, error: payError } = await supabase
+      .from("payments")
+      .select("id, tag_id")
+      .in("id", tagPaymentIds);
+    if (payError) return { data: null, error: payError };
+    const tagIds = [...new Set(payRows.map((r) => r.tag_id).filter(Boolean))];
+    if (tagIds.length) {
+      const { data: tags, error: tagsError } = await supabase
+        .from("tags")
+        .select("id, tag_no")
+        .in("id", tagIds);
+      if (tagsError) return { data: null, error: tagsError };
+      const tagNo = new Map(tags.map((t) => [t.id, t.tag_no]));
+      payRows.forEach((r) => {
+        if (tagNo.has(r.tag_id)) tagLabels.set(r.id, `Tag ${tagNo.get(r.tag_id)}`);
+      });
+    }
+  }
+
   return {
-    data: data.map((tx) => ({ ...tx, customer_name: names.get(tx.customer_id) ?? null })),
+    data: data.map((tx) => ({
+      ...tx,
+      customer_name: tx.customer_id ? names.get(tx.customer_id) ?? null : tagLabels.get(tx.id) ?? null,
+    })),
     error: null,
   };
 }

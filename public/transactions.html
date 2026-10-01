@@ -24,11 +24,13 @@
     <!-- Filter pills -->
     <div class="mt-4 flex items-center gap-2">
       <button data-filter="all"
-        class="px-4 py-1.5 rounded-full text-sm font-medium sl-btn-primary text-white">All</button>
+        class="px-3 py-1.5 rounded-full text-sm font-medium sl-btn-primary text-white">All</button>
       <button data-filter="charge"
-        class="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Charges</button>
+        class="px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Charges</button>
       <button data-filter="payment"
-        class="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Payments</button>
+        class="px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Payments</button>
+      <button data-filter="tags"
+        class="px-3 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600">Tags</button>
     </div>
 
     <!-- Search -->
@@ -119,6 +121,8 @@
     all: { match: () => true, emptyText: "No transactions yet." },
     charge: { match: (tx) => tx.type === "charge", emptyText: "No charges yet." },
     payment: { match: (tx) => tx.type === "payment", emptyText: "No payments yet." },
+    // Payments received by a tag rather than a customer (null customer_id).
+    tags: { match: (tx) => tx.type === "payment" && !tx.customer_id, emptyText: "No tag payments yet." },
   };
 
   let activeFilter = "all";

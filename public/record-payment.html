@@ -25,13 +25,40 @@
 
     <form id="record-payment-form" class="mt-6 space-y-6">
 
-      <!-- Customer -->
+      <!-- Payment Recipient -->
       <div>
+        <p id="recipient-label" class="text-sm font-semibold text-slate-900 mb-2">Payment Recipient</p>
+        <div id="recipient-group" role="radiogroup" aria-labelledby="recipient-label"
+             class="grid grid-cols-2 gap-1 p-1 rounded-xl border border-slate-200">
+          <button type="button" role="radio" data-value="customer" aria-checked="true"
+            class="recipient-btn flex items-center justify-center gap-2 py-2.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 text-sm font-medium">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            Customer
+          </button>
+          <button type="button" role="radio" data-value="tag" aria-checked="false"
+            class="recipient-btn flex items-center justify-center gap-2 py-2.5 rounded-lg border border-transparent text-slate-500 text-sm font-medium">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="7" cy="7" r="1.5"/></svg>
+            Customer Tags
+          </button>
+        </div>
+      </div>
+
+      <!-- Customer -->
+      <div id="customer-field">
         <p class="text-sm font-semibold text-slate-900 mb-2">Customer</p>
         <div id="customer-select"></div>
         <p id="owes-label" class="hidden mt-2 text-xs font-semibold text-rose-500"></p>
         <p id="no-customers-note" class="hidden mt-2 text-xs text-rose-500">
           No customers yet. <a href="add-customer.html" class="sl-link font-medium">Add one first</a>.
+        </p>
+      </div>
+
+      <!-- Customer Tag -->
+      <div id="tag-field" class="hidden">
+        <p class="text-sm font-semibold text-slate-900 mb-2">Customer Tag</p>
+        <div id="tag-select"></div>
+        <p id="no-tags-note" class="hidden mt-2 text-xs text-rose-500">
+          No tags yet. <a href="add-tag.html" class="sl-link font-medium">Add one first</a>.
         </p>
       </div>
 
@@ -41,6 +68,11 @@
         <input id="amount" type="number" inputmode="numeric" min="0" step="50" required
                class="sl-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition"
                placeholder="e.g. 100">
+      </div>
+
+      <!-- Device / Item (Customer Tags only) -->
+      <div id="device-field" class="hidden">
+        <div id="device-picker"></div>
       </div>
 
       <!-- Payment Method -->
@@ -89,8 +121,10 @@
 <script type="module">
   import { requireAuth } from "./js/auth.js";
   import { createSelect } from "./js/custom-select.js";
+  import { createDevicePicker } from "./js/device-picker.js";
   import { showToast, setLoading, formatNaira } from "./js/utils.js";
   import { listCustomersBasic, getCustomerBalance } from "./js/customers.js";
+  import { listTags } from "./js/tags.js";
   import { createPayment } from "./js/payments.js";
 
   await requireAuth();
@@ -100,7 +134,34 @@
     searchPlaceholder: "Search customer...",
     onChange: () => updateOwesLabel(),
   });
+  const tagSelect = createSelect(document.getElementById("tag-select"), {
+    placeholder: "Loading tags…",
+    searchPlaceholder: "Search tag...",
+  });
+  const devicePicker = createDevicePicker(document.getElementById("device-picker"));
   const owesLabel = document.getElementById("owes-label");
+
+  // Recipient type drives which picker shows; the other one stays mounted
+  // (keeps its selection) but hidden, and only the active one is submitted.
+  let recipient = "customer";
+  const recipientBtns = document.querySelectorAll(".recipient-btn");
+  const ACTIVE = ["border-blue-200", "bg-blue-50", "text-blue-600"];
+  const IDLE = ["border-transparent", "text-slate-500"];
+
+  function setRecipient(next) {
+    recipient = next;
+    recipientBtns.forEach((b) => {
+      const on = b.dataset.value === next;
+      b.setAttribute("aria-checked", String(on));
+      b.classList.remove(...ACTIVE, ...IDLE);
+      b.classList.add(...(on ? ACTIVE : IDLE));
+    });
+    document.getElementById("customer-field").classList.toggle("hidden", next !== "customer");
+    document.getElementById("tag-field").classList.toggle("hidden", next !== "tag");
+    document.getElementById("device-field").classList.toggle("hidden", next !== "tag");
+    if (next === "customer") updateOwesLabel();
+  }
+  recipientBtns.forEach((b) => b.addEventListener("click", () => setRecipient(b.dataset.value)));
 
   async function updateOwesLabel() {
     const customerId = customerSelect.value;
@@ -129,6 +190,17 @@
     await updateOwesLabel();
   }
 
+  const { data: tags, error: tagsError } = await listTags();
+  if (tagsError || !tags || !tags.length) {
+    tagSelect.setPlaceholder("No tags available");
+    tagSelect.setDisabled(true);
+    document.getElementById("no-tags-note").classList.remove("hidden");
+  } else {
+    tagSelect.setOptions(
+      tags.map((t) => ({ value: t.id, label: `Tag ${t.tag_no}`, sub: t.full_name || t.phone, avatar: "#" }))
+    );
+  }
+
   let selectedMethod = "Cash";
   document.querySelectorAll(".method-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -147,18 +219,30 @@
   document.getElementById("record-payment-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const submitBtn = e.target.querySelector("button[type=submit]");
-    const customerId = customerSelect.value;
+    const customerId = recipient === "customer" ? customerSelect.value : "";
+    const tagId = recipient === "tag" ? tagSelect.value : "";
     const amount = Number(document.getElementById("amount").value);
     const notes = document.getElementById("notes").value.trim();
 
-    if (!customerId) {
+    if (recipient === "customer" && !customerId) {
       showToast("Choose a customer first");
+      return;
+    }
+    if (recipient === "tag" && !tagId) {
+      showToast("Choose a tag first");
+      return;
+    }
+    if (recipient === "tag" && !devicePicker.value) {
+      showToast("Choose a device first");
       return;
     }
 
     setLoading(submitBtn, true, "Saving…");
     const { error } = await createPayment({
       customerId,
+      tagId,
+      device: recipient === "tag" ? devicePicker.value : undefined,
+      quantity: recipient === "tag" ? devicePicker.quantity : undefined,
       amount,
       method: selectedMethod,
       notes,

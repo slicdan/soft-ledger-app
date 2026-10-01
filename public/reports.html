@@ -367,7 +367,8 @@
       revenue += amount;
       const idx = dayIndex.get(dayKey(received));
       if (idx !== undefined) daily[idx] += amount;
-      byCustomer.set(row.customer_id, (byCustomer.get(row.customer_id) || 0) + amount);
+      // Tag payments have no customer; they count toward revenue only.
+      if (row.customer_id) byCustomer.set(row.customer_id, (byCustomer.get(row.customer_id) || 0) + amount);
     }
 
     const periodLabel = activeRange === "month" ? "the previous period" : `the previous ${days} days`;

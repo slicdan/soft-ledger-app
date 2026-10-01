@@ -29,7 +29,8 @@ export async function getCharge(id) {
     .single();
 }
 
-export async function createCharge({ customerId, device, duration, amount, notes }) {
+// `quantity` is sent only when above the column default of 1.
+export async function createCharge({ customerId, device, quantity, duration, amount, notes }) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) return { data: null, error: userError };
 
@@ -39,6 +40,7 @@ export async function createCharge({ customerId, device, duration, amount, notes
       user_id: userData.user.id,
       customer_id: customerId,
       device,
+      ...(quantity > 1 ? { quantity } : {}),
       duration,
       amount,
       notes: notes || null,

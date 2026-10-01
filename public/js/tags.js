@@ -24,7 +24,7 @@ export async function createTag({ tagNo, fullName, phone }) {
     .single();
 }
 
-// Number of saved tags, for the dashboard's Tags tile. Head request:
+// Number of saved tags, for the dashboard's Customer Tags tile. Head request:
 // returns the count only, no rows.
 export async function countTags() {
   const { count, error } = await supabase
@@ -39,4 +39,13 @@ export async function listTags() {
     .from("tags")
     .select("id, tag_no, full_name, phone, created_at")
     .order("created_at", { ascending: false });
+}
+
+// One tag by id, for transaction-detail.html's recipient line on tag payments.
+export async function getTag(id) {
+  return supabase
+    .from("tags")
+    .select("id, tag_no, full_name, phone")
+    .eq("id", id)
+    .single();
 }

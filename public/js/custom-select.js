@@ -6,7 +6,7 @@
 //     searchPlaceholder: "Search customer...",
 //     onChange: (value) => {},
 //   });
-//   select.setOptions([{ value, label, sub }]);   // sorted A–Z by label
+//   select.setOptions([{ value, label, sub, avatar }]);   // sorted A–Z by label; avatar optional (defaults to first letter)
 //   select.value                                   // selected value ("" if none)
 //   select.setDisabled(true);
 
@@ -76,7 +76,7 @@ export function createSelect(container, { placeholder = "Select…", searchPlace
 
       const avatar = document.createElement("span");
       avatar.className = "sl-select-avatar";
-      avatar.textContent = (o.label.trim()[0] || "?").toUpperCase();
+      avatar.textContent = o.avatar ?? (o.label.trim()[0] || "?").toUpperCase();
 
       const text = document.createElement("span");
       text.className = "sl-select-text";
@@ -147,7 +147,7 @@ export function createSelect(container, { placeholder = "Select…", searchPlace
     },
     setOptions(list) {
       options = [...list].sort((a, b) =>
-        a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
+        a.label.localeCompare(b.label, undefined, { sensitivity: "base", numeric: true })
       );
       selected = options[0] || null;
       renderLabel();

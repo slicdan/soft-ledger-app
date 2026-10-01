@@ -162,6 +162,7 @@
   import { getCustomerBasicById, getCustomerBalance } from "./js/customers.js";
   import { getCharge, updateCharge, deleteCharge } from "./js/charges.js";
   import { getPayment, updatePayment, deletePayment } from "./js/payments.js";
+  import { getTag } from "./js/tags.js";
 
   await requireAuth();
 
@@ -186,20 +187,21 @@
     throw new Error("transaction not found");
   }
 
-  const { data: customer } = await getCustomerBasicById(record.customer_id);
+  const { data: customer } = record.customer_id ? await getCustomerBasicById(record.customer_id) : { data: null };
+  const { data: tag } = record.tag_id ? await getTag(record.tag_id) : { data: null };
 
   document.getElementById("page-title").textContent = isCharge ? "Charge" : "Payment";
   document.getElementById("type-label").textContent = isCharge ? "Charge" : "Payment received";
   document.getElementById("amount-display").textContent = formatNaira(record.amount);
   const customerLink = document.getElementById("customer-link");
-  customerLink.textContent = customer?.full_name || "Unknown customer";
+  customerLink.textContent = customer?.full_name || (tag ? `Tag ${tag.tag_no}` : "Unknown customer");
   customerLink.href = customer ? `customer-detail.html?id=${customer.id}` : "#";
   document.getElementById("created-at-display").textContent = new Date(record.created_at).toLocaleString("en-NG", {
     dateStyle: "medium",
     timeStyle: "short",
   });
 
-  const { data: balanceRow } = await getCustomerBalance(record.customer_id);
+  const { data: balanceRow } = record.customer_id ? await getCustomerBalance(record.customer_id) : { data: null };
   if (balanceRow && balanceRow.balance > 0) {
     document.getElementById("owing-amount").textContent = formatNaira(balanceRow.balance);
     const owingBadge = document.getElementById("owing-badge");

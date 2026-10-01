@@ -11,7 +11,11 @@ export async function getPayment(id) {
     .single();
 }
 
-export async function createPayment({ customerId, amount, method, notes }) {
+// Exactly one recipient: pass customerId OR tagId. Only the provided key is
+// sent, so customer payments keep working before the tag_id migration lands.
+// `device` (Device / Item) and `quantity` are sent only for tag payments;
+// quantity only when above the column default of 1.
+export async function createPayment({ customerId, tagId, device, quantity, amount, method, notes }) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) return { data: null, error: userError };
 
@@ -19,7 +23,9 @@ export async function createPayment({ customerId, amount, method, notes }) {
     .from("payments")
     .insert({
       user_id: userData.user.id,
-      customer_id: customerId,
+      ...(tagId ? { tag_id: tagId } : { customer_id: customerId }),
+      ...(device ? { device } : {}),
+      ...(quantity > 1 ? { quantity } : {}),
       amount,
       method,
       notes: notes || null,
