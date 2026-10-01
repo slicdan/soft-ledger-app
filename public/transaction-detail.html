@@ -31,6 +31,13 @@
       <div class="mt-6 rounded-2xl p-5 flex items-start justify-between gap-4 sl-hero-card">
         <div class="min-w-0">
           <p id="type-label" class="text-slate-400 text-xs"></p>
+          <div id="device-summary" class="hidden mt-3 mb-2 flex items-center gap-3">
+            <span id="device-summary-icon" class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-white" style="background:rgba(255,255,255,0.12)"></span>
+            <div class="min-w-0">
+              <p id="device-summary-title" class="text-white text-lg font-semibold leading-tight"></p>
+              <p id="device-summary-amount" class="text-blue-300 text-sm font-medium mt-0.5"></p>
+            </div>
+          </div>
           <p id="amount-display" class="text-white text-2xl font-bold mt-1"></p>
           <a id="customer-link" href="#" class="inline-block mt-3 text-sm text-blue-300 font-medium"></a>
           <p id="created-at-display" class="text-slate-500 text-xs mt-1"></p>
@@ -49,10 +56,6 @@
 
       <!-- View mode -->
       <div id="view-mode" class="mt-6 space-y-4">
-        <div id="view-device-row" class="hidden flex items-center justify-between py-2 border-b border-slate-100">
-          <span class="text-sm text-slate-500">Device</span>
-          <span id="view-device" class="text-sm font-medium text-slate-900"></span>
-        </div>
         <div id="view-duration-row" class="hidden flex items-center justify-between py-2 border-b border-slate-100">
           <span class="text-sm text-slate-500">Duration</span>
           <span id="view-duration" class="text-sm font-medium text-slate-900"></span>
@@ -163,6 +166,7 @@
   import { getCharge, updateCharge, deleteCharge } from "./js/charges.js";
   import { getPayment, updatePayment, deletePayment } from "./js/payments.js";
   import { getTag } from "./js/tags.js";
+  import { deviceIcon, deviceLabel } from "./js/device-picker.js";
 
   await requireAuth();
 
@@ -193,6 +197,16 @@
   document.getElementById("page-title").textContent = isCharge ? "Charge" : "Payment";
   document.getElementById("type-label").textContent = isCharge ? "Charge" : "Payment received";
   document.getElementById("amount-display").textContent = formatNaira(record.amount);
+
+  // Device summary row (charges and tag payments): "Phone x2" + amount.
+  if (record.device) {
+    document.getElementById("device-summary-icon").innerHTML = deviceIcon(record.device, 28);
+    document.getElementById("device-summary-title").textContent = deviceLabel(record.device, record.quantity ?? 1);
+    document.getElementById("device-summary-amount").textContent = formatNaira(record.amount);
+    document.getElementById("device-summary").classList.remove("hidden");
+    // The row carries the amount, so the big amount line is redundant here.
+    document.getElementById("amount-display").classList.add("hidden");
+  }
   const customerLink = document.getElementById("customer-link");
   customerLink.textContent = customer?.full_name || (tag ? `Tag ${tag.tag_no}` : "Unknown customer");
   customerLink.href = customer ? `customer-detail.html?id=${customer.id}` : "#";
@@ -210,9 +224,7 @@
   }
 
   if (isCharge) {
-    document.getElementById("view-device-row").classList.remove("hidden");
     document.getElementById("view-duration-row").classList.remove("hidden");
-    document.getElementById("view-device").textContent = record.device;
     document.getElementById("view-duration").textContent = record.duration;
     document.getElementById("edit-device-field").classList.remove("hidden");
     document.getElementById("edit-duration-field").classList.remove("hidden");

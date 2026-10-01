@@ -36,6 +36,18 @@ const DEVICES = [
   },
 ];
 
+// Read-only helpers for screens that display a saved device (e.g. the
+// transaction detail card): the same icons, and "Phone x2"-style labels.
+export function deviceIcon(value, size = 20) {
+  const d = DEVICES.find((x) => x.value === value) || DEVICES[DEVICES.length - 1];
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d.icon}</svg>`;
+}
+
+export function deviceLabel(value, quantity = 1) {
+  const d = DEVICES.find((x) => x.value === value);
+  return d && d.quantity && quantity > 1 ? `${value} x${quantity}` : value;
+}
+
 const ACTIVE = ["border-2", "border-blue-600", "bg-blue-50", "text-blue-600"];
 const IDLE = ["border", "border-slate-200", "text-slate-500"];
 
