@@ -35,6 +35,27 @@
   #recent-activity-list > a {
     flex: 1 1 0; min-height: 40px; max-height: 11dvh; padding-block: 0;
   }
+  /* Pull-to-refresh. The page never scrolls; the content is translated down
+     during a pull and springs back. touch-action leaves vertical pans to JS. */
+  .dash-root { position: relative; touch-action: pan-x pinch-zoom; }
+  .dash-nav { position: relative; z-index: 20; }
+  #ptr-indicator {
+    position: absolute; top: 0; left: 50%; z-index: 10; width: 36px; height: 36px;
+    border-radius: 9999px; display: flex; align-items: center; justify-content: center;
+    background: #fff; border: 1px solid #E2E8F0; color: #2563EB;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+    opacity: 0; pointer-events: none; will-change: transform, opacity;
+    transform: translate(-50%, -48px);
+  }
+  html.dark #ptr-indicator { background: var(--d-surface, #151C27); border-color: #1E2935; color: #5EA0FF; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45); }
+  #ptr-indicator svg { display: block; transform: rotate(-90deg); }
+  #ptr-indicator circle { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  #ptr-indicator.ptr-ready { color: #1D4ED8; }
+  html.dark #ptr-indicator.ptr-ready { color: #93C5FD; }
+  #ptr-indicator.ptr-spinning svg { animation: ptr-spin 0.8s linear infinite; }
+  #ptr-indicator.ptr-spinning circle { stroke-dasharray: 44 63 !important; stroke-dashoffset: 0 !important; }
+  @keyframes ptr-spin { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
+  .dash-main.ptr-animating, #ptr-indicator.ptr-animating { transition: transform 0.28s cubic-bezier(0.22, 0.8, 0.3, 1), opacity 0.2s ease; }
   .dash-nav { flex: 0 0 auto; }
   @media (min-width: 1024px) { .dash-main { max-width: 24rem; } }
   .dash-avatar { width: clamp(32px, 5.2dvh, 44px); height: clamp(32px, 5.2dvh, 44px); }
@@ -50,6 +71,10 @@
 <body class="bg-white">
 
   <div class="dash-root">
+  <div id="ptr-indicator" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24"><circle id="ptr-ring" cx="12" cy="12" r="10"/></svg>
+  </div>
+  <span id="ptr-status" class="sr-only" role="status" aria-live="polite"></span>
   <div class="dash-main">
 
     <!-- Header -->
@@ -239,60 +264,16 @@
   // revenue, yesterday's baseline and the trend bars all come from this one
   // range read. "Total Today" stays on charges billed, read separately.
   const TREND_DAYS = 4;
+  const RECENT_ACTIVITY_LIMIT = 4;
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  const todayStart = addDays(new Date(), 0);
-  const trendStart = addDays(todayStart, -(TREND_DAYS - 1));
 
-  const RECENT_ACTIVITY_LIMIT = 4;
-  const [
-    { data: customers, error: customersError },
-    { total: todayTotal },
-    { data: recent, error: recentError },
-    { data: paymentRows, error: paymentsError },
-    { count: tagCount, error: tagsError },
-  ] = await Promise.all([
-    listCustomersWithBalances(),
-    getTodayChargesTotal(),
-    listRecentTransactions(RECENT_ACTIVITY_LIMIT),
-    listPaymentsInRange(trendStart, addDays(todayStart, 1)),
-    countTags(),
-  ]);
-
-  if (!customersError && customers) {
-    const navCount = document.getElementById("nav-customers-count");
-    navCount.textContent = customers.length > 99 ? "99+" : String(customers.length);
-    navCount.setAttribute("aria-label", `${customers.length} customers`);
-    navCount.hidden = false;
-    setStatNaira(
-      "stat-outstanding",
-      customers.filter((c) => c.balance > 0).reduce((sum, c) => sum + c.balance, 0)
-    );
-  }
-  setStatNaira("stat-total-today", todayTotal);
-  if (!tagsError) document.getElementById("stat-tags").textContent = tagCount;
-
-  const activityList = document.getElementById("recent-activity-list");
-  const activityEmpty = document.getElementById("recent-activity-empty");
-  if (!recentError && recent && recent.length) {
-    activityList.innerHTML = recent.slice(0, RECENT_ACTIVITY_LIMIT).map((tx) => {
-      const initial = (tx.customer_name || "?").charAt(0).toUpperCase();
-      const label = tx.type === "charge" ? "Charged" : "Payment received";
-      return `
-        <a href="transaction-detail.html?type=${tx.type}&id=${tx.id}" class="flex items-center gap-3">
-          <span class="dash-avatar shrink-0 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-semibold">${initial}</span>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-slate-900">${tx.customer_name || "Unknown"}</p>
-            <p class="text-xs text-slate-400">${label} · ${formatTimeAgo(tx.created_at)}</p>
-          </div>
-          <p class="text-sm font-semibold text-slate-900">${formatNaira(tx.amount)}</p>
-        </a>`;
-    }).join("");
-  } else {
-    activityEmpty.classList.remove("hidden");
-  }
+  const CHEVRON_UP = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+  const CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+  const DELTA_BASE = "flex items-center gap-0.5 text-xs font-semibold";
 
   // Revenue trend chart — the card's mini bar chart, one bar per day, today last.
+  // Created once; loadDashboard() updates its data.
   const revenueTrendChart = new Chart(document.getElementById("revenue-trend-chart"), {
     type: "bar",
     data: {
@@ -320,50 +301,240 @@
     },
   });
 
-  if (!paymentsError && paymentRows) {
-    const daily = new Array(TREND_DAYS).fill(0);
-    const dayIndex = new Map(daily.map((_, i) => [dayKey(addDays(trendStart, i)), i]));
-    for (const row of paymentRows) {
-      const i = dayIndex.get(dayKey(new Date(row.created_at)));
-      if (i !== undefined) daily[i] += Number(row.amount) || 0;
-    }
-    const revenueToday = daily[TREND_DAYS - 1];
-    countUpNaira(document.getElementById("revenue-today"), revenueToday);
+  // Single data path for first load and pull-to-refresh. Sections whose
+  // request failed keep their current values. Resolves true when every
+  // request succeeded. `initial` only controls the count-up animation.
+  let loadingDashboard = false;
+  async function loadDashboard({ initial = false } = {}) {
+    if (loadingDashboard) return false;
+    loadingDashboard = true;
+    try {
+      const hr = new Date().getHours();
+      document.getElementById("greeting").textContent =
+        hr < 12 ? "Good morning," : hr < 17 ? "Good afternoon," : "Good evening,";
 
-    // Chart: oldest → today.
-    const labels = daily.map((_, i) => addDays(trendStart, i).toLocaleDateString("en-NG", { weekday: "short" }));
-    revenueTrendChart.data.labels = labels;
-    revenueTrendChart.data.datasets[0].data = daily;
-    revenueTrendChart.update();
-    revenueTrendChart.canvas.setAttribute(
-      "aria-label",
-      `Revenue, last ${TREND_DAYS} days: ${labels.map((l, i) => `${l} ${formatNaira(daily[i])}`).join(", ")}`
-    );
+      const todayStart = addDays(new Date(), 0);
+      const trendStart = addDays(todayStart, -(TREND_DAYS - 1));
+      const [
+        { data: customers, error: customersError },
+        { total: todayTotal, error: todayError },
+        { data: recent, error: recentError },
+        { data: paymentRows, error: paymentsError },
+        { count: tagCount, error: tagsError },
+      ] = await Promise.all([
+        listCustomersWithBalances(),
+        getTodayChargesTotal(),
+        listRecentTransactions(RECENT_ACTIVITY_LIMIT),
+        listPaymentsInRange(trendStart, addDays(todayStart, 1)),
+        countTags(),
+      ]);
 
-    // % change in payments received, today vs yesterday. Both zero → 0%.
-    // No baseline (yesterday 0, today > 0) → "—", never Infinity/NaN.
-    const CHEVRON_UP = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
-    const CHEVRON_DOWN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
-    const deltaEl = document.getElementById("revenue-delta");
-    const yesterdayTotal = daily[TREND_DAYS - 2];
-    deltaEl.title = "vs yesterday";
-    if (yesterdayTotal > 0) {
-      const pct = Math.round(((revenueToday - yesterdayTotal) / yesterdayTotal) * 100);
-      if (pct > 0) {
-        deltaEl.classList.add("text-emerald-400");
-        deltaEl.innerHTML = `${CHEVRON_UP}${pct}%`;
-      } else if (pct < 0) {
-        deltaEl.classList.add("text-rose-400");
-        deltaEl.innerHTML = `${CHEVRON_DOWN}${Math.abs(pct)}%`;
-      } else {
-        deltaEl.classList.add("text-slate-400");
-        deltaEl.textContent = "0%";
+      if (!customersError && customers) {
+        const navCount = document.getElementById("nav-customers-count");
+        navCount.textContent = customers.length > 99 ? "99+" : String(customers.length);
+        navCount.setAttribute("aria-label", `${customers.length} customers`);
+        navCount.hidden = false;
+        setStatNaira(
+          "stat-outstanding",
+          customers.filter((c) => c.balance > 0).reduce((sum, c) => sum + c.balance, 0)
+        );
       }
-    } else {
-      deltaEl.classList.add("text-slate-400");
-      deltaEl.textContent = revenueToday > 0 ? "—" : "0%";
+      if (!todayError) setStatNaira("stat-total-today", todayTotal);
+      if (!tagsError) document.getElementById("stat-tags").textContent = tagCount;
+
+      const activityList = document.getElementById("recent-activity-list");
+      const activityEmpty = document.getElementById("recent-activity-empty");
+      if (!recentError && recent && recent.length) {
+        activityEmpty.classList.add("hidden");
+        activityList.innerHTML = recent.slice(0, RECENT_ACTIVITY_LIMIT).map((tx) => {
+          const initial = (tx.customer_name || "?").charAt(0).toUpperCase();
+          const label = tx.type === "charge" ? "Charged" : "Payment received";
+          return `
+            <a href="transaction-detail.html?type=${tx.type}&id=${tx.id}" class="flex items-center gap-3">
+              <span class="dash-avatar shrink-0 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-semibold">${initial}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900">${tx.customer_name || "Unknown"}</p>
+                <p class="text-xs text-slate-400">${label} · ${formatTimeAgo(tx.created_at)}</p>
+              </div>
+              <p class="text-sm font-semibold text-slate-900">${formatNaira(tx.amount)}</p>
+            </a>`;
+        }).join("");
+      } else if (!recentError) {
+        activityList.innerHTML = "";
+        activityEmpty.classList.remove("hidden");
+      } else if (initial) {
+        activityEmpty.classList.remove("hidden");
+      }
+
+      if (!paymentsError && paymentRows) {
+        const daily = new Array(TREND_DAYS).fill(0);
+        const dayIndex = new Map(daily.map((_, i) => [dayKey(addDays(trendStart, i)), i]));
+        for (const row of paymentRows) {
+          const i = dayIndex.get(dayKey(new Date(row.created_at)));
+          if (i !== undefined) daily[i] += Number(row.amount) || 0;
+        }
+        const revenueToday = daily[TREND_DAYS - 1];
+        const revenueEl = document.getElementById("revenue-today");
+        // Count-up only on first load; a refresh updates in place (no reset to 0).
+        if (initial) countUpNaira(revenueEl, revenueToday);
+        else revenueEl.textContent = formatNaira(revenueToday);
+
+        // Chart: oldest → today.
+        const labels = daily.map((_, i) => addDays(trendStart, i).toLocaleDateString("en-NG", { weekday: "short" }));
+        revenueTrendChart.data.labels = labels;
+        revenueTrendChart.data.datasets[0].data = daily;
+        revenueTrendChart.update();
+        revenueTrendChart.canvas.setAttribute(
+          "aria-label",
+          `Revenue, last ${TREND_DAYS} days: ${labels.map((l, i) => `${l} ${formatNaira(daily[i])}`).join(", ")}`
+        );
+
+        // % change in payments received, today vs yesterday. Both zero → 0%.
+        // No baseline (yesterday 0, today > 0) → "—", never Infinity/NaN.
+        const deltaEl = document.getElementById("revenue-delta");
+        deltaEl.className = DELTA_BASE; // clear the previous colour class
+        const yesterdayTotal = daily[TREND_DAYS - 2];
+        deltaEl.title = "vs yesterday";
+        if (yesterdayTotal > 0) {
+          const pct = Math.round(((revenueToday - yesterdayTotal) / yesterdayTotal) * 100);
+          if (pct > 0) {
+            deltaEl.classList.add("text-emerald-400");
+            deltaEl.innerHTML = `${CHEVRON_UP}${pct}%`;
+          } else if (pct < 0) {
+            deltaEl.classList.add("text-rose-400");
+            deltaEl.innerHTML = `${CHEVRON_DOWN}${Math.abs(pct)}%`;
+          } else {
+            deltaEl.classList.add("text-slate-400");
+            deltaEl.textContent = "0%";
+          }
+        } else {
+          deltaEl.classList.add("text-slate-400");
+          deltaEl.textContent = revenueToday > 0 ? "—" : "0%";
+        }
+      }
+
+      return !(customersError || todayError || recentError || paymentsError || tagsError);
+    } catch (err) {
+      console.error("dashboard load failed", err);
+      return false;
+    } finally {
+      loadingDashboard = false;
     }
   }
+
+  await loadDashboard({ initial: true });
+
+  // ---- Pull-to-refresh ------------------------------------------------
+  // The page is fixed (never scrolls), so it is always "at the top". A pull
+  // is recognised only for a single-finger, clearly vertical, downward drag
+  // past a small dead zone — taps and short or sideways swipes are ignored.
+  // The content follows the finger with resistance, the nav stays put, and
+  // releasing past the threshold calls loadDashboard() — the same loader the
+  // page uses on first load.
+  (() => {
+    const root = document.querySelector(".dash-root");
+    const main = document.querySelector(".dash-main");
+    const indicator = document.getElementById("ptr-indicator");
+    const ring = document.getElementById("ptr-ring");
+    const status = document.getElementById("ptr-status");
+
+    const SLOP = 12;          // px of travel before a gesture is classified
+    const RESISTANCE = 0.6;   // finger px -> content px
+    const THRESHOLD = 64;     // content px that arms the refresh
+    const MAX_PULL = 110;     // rubber-band ceiling
+    const HOLD = 56;          // content offset while refreshing
+    const MIN_SPIN_MS = 600;  // avoid a flash on fast responses
+    const CIRC = 2 * Math.PI * 10;
+    const IND = 36;
+
+    let state = "idle";       // idle | tracking | pulling | refreshing | releasing
+    let startX = 0, startY = 0, pull = 0, armed = false;
+
+    ring.style.strokeDasharray = `${CIRC}`;
+
+    function render(offset, progress) {
+      main.style.transform = offset > 0 ? `translateY(${offset}px)` : "";
+      const y = Math.max(offset / 2 - IND / 2, -IND);
+      indicator.style.transform = `translate(-50%, ${y}px)`;
+      indicator.style.opacity = String(Math.min(1, progress * 1.2));
+      ring.style.strokeDashoffset = `${CIRC * (1 - Math.min(progress, 1))}`;
+    }
+    function setAnimating(on) {
+      main.classList.toggle("ptr-animating", on);
+      indicator.classList.toggle("ptr-animating", on);
+    }
+    function reset() {
+      setAnimating(false);
+      main.style.transform = "";
+      indicator.style.transform = "";
+      indicator.style.opacity = "0";
+      indicator.classList.remove("ptr-ready", "ptr-spinning");
+      pull = 0; armed = false; state = "idle";
+    }
+    function release() {
+      state = "releasing";
+      setAnimating(true);
+      indicator.classList.remove("ptr-ready", "ptr-spinning");
+      render(0, 0);
+      let done = false;
+      const finish = () => { if (done) return; done = true; main.removeEventListener("transitionend", onEnd); reset(); };
+      const onEnd = (e) => { if (e.target === main) finish(); };
+      main.addEventListener("transitionend", onEnd);
+      setTimeout(finish, 400); // fallback if no transition fires
+    }
+    async function refresh() {
+      state = "refreshing";
+      setAnimating(true);
+      indicator.classList.remove("ptr-ready");
+      indicator.classList.add("ptr-spinning");
+      render(HOLD, 1);
+      status.textContent = "Refreshing";
+      const [ok] = await Promise.all([
+        loadDashboard({ initial: false }),
+        new Promise((r) => setTimeout(r, MIN_SPIN_MS)),
+      ]);
+      status.textContent = ok ? "Dashboard updated" : "";
+      if (!ok) showToast("Couldn't refresh", "error", "Check your connection and try again");
+      release();
+    }
+
+    root.addEventListener("touchstart", (e) => {
+      if (state !== "idle" || e.touches.length !== 1) return;
+      if (e.target.closest(".dash-nav")) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      state = "tracking";
+    }, { passive: true });
+
+    root.addEventListener("touchmove", (e) => {
+      if (state !== "tracking" && state !== "pulling") return;
+      if (e.touches.length !== 1) { if (state === "pulling") release(); else state = "idle"; return; }
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+
+      if (state === "tracking") {
+        if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;       // still a tap
+        if (dy <= 0 || Math.abs(dx) > Math.abs(dy) * 0.75) { state = "idle"; return; } // up / sideways
+        state = "pulling";
+        setAnimating(false);
+      }
+
+      if (e.cancelable) e.preventDefault();
+      pull = Math.min(MAX_PULL, Math.max(0, (dy - SLOP) * RESISTANCE));
+      const wasArmed = armed;
+      armed = pull >= THRESHOLD;
+      if (armed !== wasArmed) indicator.classList.toggle("ptr-ready", armed);
+      render(pull, pull / THRESHOLD);
+    }, { passive: false });
+
+    const end = () => {
+      if (state === "tracking") { state = "idle"; return; }
+      if (state !== "pulling") return;
+      if (armed) refresh(); else release();
+    };
+    root.addEventListener("touchend", end);
+    root.addEventListener("touchcancel", () => { if (state === "pulling") release(); else if (state === "tracking") state = "idle"; });
+  })();
 </script>
 </body>
 </html>
